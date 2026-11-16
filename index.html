@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pokédex Full Art</title>
+<meta name="theme-color" content="#d4372c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Full Art">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout: cabecera fija + vista activa + barra de pestañas inferior (Pokédex · Colección · Compra); hoja inferior/lateral para detalle */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --ink:#18202b; --muted:#5d6878; --line:#d5dbe3; --accent:#d4372c; --accent-soft:#fbe4e2;
+  --ok:#1f8a4c; --ok-soft:#dcf2e5;
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --g-IR:#119c8a; --g-SIR:#c2338f; --g-G:#7a55d0;
+  --shadow:0 1px 2px rgba(24,32,43,.06),0 4px 14px rgba(24,32,43,.06);
+  --tabh:64px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151d; --surface:#18202b; --ink:#e8edf3; --muted:#9aa6b6; --line:#2b3644; --accent:#ff6a5c; --accent-soft:#3a1f1e;
+    --ok:#4fd08a; --ok-soft:#173326;
+    --g-IR:#3cc9b4; --g-SIR:#ef6cbf; --g-G:#a487f0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151d; --surface:#18202b; --ink:#e8edf3; --muted:#9aa6b6; --line:#2b3644; --accent:#ff6a5c; --accent-soft:#3a1f1e;
+  --ok:#4fd08a; --ok-soft:#173326;
+  --g-IR:#3cc9b4; --g-SIR:#ef6cbf; --g-G:#a487f0;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:var(--font-body);font-size:15px;line-height:1.45;min-height:100dvh}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) max(16px,env(safe-area-inset-right)) calc(var(--tabh) + env(safe-area-inset-bottom) + 28px) max(16px,env(safe-area-inset-left));display:grid;gap:16px}
+.view{display:none;gap:16px}
+.view.active{display:grid}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(26px,5vw,36px);letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:10px;text-wrap:balance}
+h2{font-family:var(--font-display);font-weight:800;font-size:clamp(24px,4.5vw,32px);letter-spacing:-.02em;margin:0}
+.ball{width:.8em;height:.8em;border-radius:50%;border:3px solid var(--ink);background:linear-gradient(var(--accent) 0 44%,var(--ink) 44% 56%,var(--surface) 56%);position:relative;flex:none}
+.ball::after{content:"";position:absolute;inset:50% auto auto 50%;width:.26em;height:.26em;transform:translate(-50%,-50%);border-radius:50%;background:var(--surface);border:2px solid var(--ink)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.stat b{display:block;font-family:var(--font-display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat span{color:var(--muted);font-size:13px}
+.progress{height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.controls{display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+input[type=search],input[type=number],input[type=text],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+input[type=search]{flex:1 1 220px;min-width:0}
+.chip{font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.own[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.cart[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.count{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.gen-h{grid-column:1/-1;font-family:var(--font-display);font-weight:600;font-size:18px;margin:8px 0 0;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px;flex-wrap:wrap}
+.gen-h small{font-family:var(--font-body);font-weight:400;font-size:13px;color:var(--muted)}
+/* Rejilla Pokédex */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tile{all:unset;box-sizing:border-box;cursor:pointer;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 8px 12px;display:grid;gap:2px;justify-items:center;text-align:center;box-shadow:var(--shadow)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile.got{border-color:var(--ok);background:linear-gradient(var(--ok-soft),var(--surface) 70%)}
+.tile.none{cursor:default;box-shadow:none;background:transparent;opacity:.55}
+.tile img{width:80px;height:80px;image-rendering:pixelated}
+.tile .ph{width:80px;height:80px;display:grid;place-items:center;color:var(--muted);font-family:var(--font-display);font-size:28px}
+.badge{position:absolute;top:8px;right:8px;font-size:11px;font-weight:600;color:#fff;background:var(--ok);border-radius:999px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.badge.cartb{left:8px;right:auto;background:var(--accent)}
+.dexno{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.name{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.ncards{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{display:flex;width:100%;height:5px;border-radius:3px;overflow:hidden;margin-top:6px;background:var(--line)}
+.bar i{display:block;height:100%}
+.empty{padding:36px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px}
+/* Píldoras rareza */
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px 2px 8px;font-size:12px;font-weight:500;border:1px solid var(--line);white-space:nowrap}
+/* Filas de carta (detalle Pokémon / compra) */
+.crow{display:grid;grid-template-columns:84px 1fr;gap:12px;border:1px solid var(--line);border-left-width:5px;border-radius:12px;padding:10px;background:var(--surface)}
+.crow .thumb{all:unset;cursor:zoom-in;width:84px;aspect-ratio:63/88;border-radius:6px;overflow:hidden;background:var(--line);display:block}
+.crow .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.cinfo{display:grid;gap:3px;align-content:start;min-width:0}
+.ctop{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.cname{font-weight:600;overflow-wrap:anywhere}
+.cnum{font-family:var(--font-mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.cmeta{font-size:13px;color:var(--muted)}
+.cact{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.price{font-size:13px;font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.price b{font-size:15px}
+.price .na{color:var(--muted)}
+/* Colección */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.ccard{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:6px;align-content:start}
+.ccard .img{aspect-ratio:63/88;border-radius:9px;overflow:hidden;background:var(--line);box-shadow:var(--shadow)}
+.ccard img{width:100%;height:100%;object-fit:cover;display:block}
+.ccard .t{font-weight:600;font-size:14px;line-height:1.25}
+.ccard .m{font-size:12px;color:var(--muted);line-height:1.35}
+/* Compra */
+.totals{background:var(--ink);color:var(--bg);border-radius:14px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+.totals .big{font-family:var(--font-display);font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.totals .lbl{font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+.totals .sub{font-size:14px;opacity:.85;font-variant-numeric:tabular-nums}
+.manual{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.manual input[type=text]{width:92px;padding:5px 8px;font-size:16px}
+.sel-check{width:20px;height:20px;accent-color:var(--accent)}
+/* Pestañas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:0 max(8px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px,env(safe-area-inset-left))}
+.tab{all:unset;cursor:pointer;height:var(--tabh);display:grid;place-items:center;align-content:center;gap:2px;font-size:12px;font-weight:500;color:var(--muted);position:relative}
+.tab svg{width:24px;height:24px}
+.tab[aria-selected="true"]{color:var(--accent)}
+.tab .n{position:absolute;top:8px;left:calc(50% + 8px);background:var(--accent);color:#fff;font-size:10px;font-weight:600;border-radius:999px;padding:0 6px;line-height:16px;font-variant-numeric:tabular-nums}
+.tab .n:empty{display:none}
+/* Hoja de detalle */
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,.45);display:none;z-index:30}
+.scrim.open{display:block}
+.sheet{position:fixed;z-index:31;background:var(--surface);display:grid;grid-template-rows:auto 1fr;box-shadow:0 -8px 30px rgba(0,0,0,.2);transition:transform .22s ease;
+  left:0;right:0;bottom:0;max-height:92dvh;border-radius:18px 18px 0 0;transform:translateY(105%);visibility:hidden}
+.sheet.open{transform:none;visibility:visible}
+@media (min-width:760px){
+  .sheet{left:auto;top:0;height:100%;max-height:none;width:min(560px,100%);border-radius:0;border-left:1px solid var(--line);transform:translateX(105%)}
+}
+.s-head{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.s-head img{width:84px;height:84px;image-rendering:pixelated}
+.s-head h3{font-family:var(--font-display);font-size:24px;font-weight:800;margin:0;line-height:1.1}
+.close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:20px;line-height:1;align-self:start}
+.s-body{overflow:auto;padding:12px 16px calc(24px + env(safe-area-inset-bottom));display:grid;gap:10px;align-content:start;overscroll-behavior:contain}
+/* Visor de carta */
+.viewer{position:fixed;inset:0;z-index:40;background:rgba(8,10,14,.92);display:none;overflow:auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.viewer.open{display:grid;place-items:center}
+.v-inner{display:grid;gap:14px;width:min(420px,100%);color:#eef1f5}
+.v-inner img{width:100%;border-radius:14px;display:block;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#222;aspect-ratio:63/88;object-fit:cover}
+.v-inner .btn{background:#1d2530;border-color:#3a4554;color:#eef1f5}
+.v-inner .btn.own[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.v-inner .btn.cart[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.v-inner .cmeta{color:#a9b3c1}
+.v-close{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;width:42px;height:42px;border-radius:50%;border:1px solid #3a4554;background:#1d2530;color:#fff;font-size:22px;cursor:pointer}
+/* Copia de seguridad */
+details.backup{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+details.backup summary{cursor:pointer;font-weight:600}
+details.backup textarea{width:100%;min-height:110px;font-family:var(--font-mono);font-size:12px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;z-index:50;transition:all .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+footer{color:var(--muted);font-size:12px;display:grid;gap:4px;max-width:80ch}
+footer p{margin:0}
+@media (max-width:420px){.grid{grid-template-columns:repeat(3,1fr);gap:8px}.tile{padding:8px 4px 10px}.tile img,.tile .ph{width:64px;height:64px}.name{font-size:13px}.cgrid{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- POKÉDEX -->
+  <section class="view active" id="v-dex" aria-labelledby="t-dex">
+    <div class="top">
+      <h1><span class="ball" aria-hidden="true"></span>Pokédex Full Art</h1>
+      <span class="count" id="updated"></span>
+    </div>
+    <div class="stats" id="dex-stats"></div>
+    <div class="controls" role="search">
+      <div class="row">
+        <label class="sr" for="q" hidden>Buscar</label>
+        <input type="search" id="q" placeholder="Pokémon (nombre o nº)" autocomplete="off">
+        <select id="sort" aria-label="Orden">
+          <option value="dex">Nº Pokédex</option>
+          <option value="cards">Más cartas</option>
+          <option value="name">Nombre A–Z</option>
+        </select>
+      </div>
+      <div class="chips" id="status-chips" aria-label="Estado"></div>
+      <div class="chips" id="gens" aria-label="Generación"></div>
+      <div class="chips" id="groups" aria-label="Rareza"></div>
+      <div class="row">
+        <label class="small" style="display:inline-flex;gap:8px;align-items:center"><input type="checkbox" id="showMissing"> Ver también Pokémon sin carta ilustrada</label>
+        <span class="count" id="count" aria-live="polite"></span>
+      </div>
+    </div>
+    <main class="grid" id="grid"></main>
+    <footer>
+      <p>Cartas Illustration Rare, Special Illustration Rare y Trainer/Galarian Gallery de las expansiones en inglés (Black &amp; White en adelante). Datos de cartas: PokemonTCG y TCGdex. Precios de Cardmarket vía TCGdex. Nombres de Pokémon: PokéAPI.</p>
+    </footer>
+  </section>
+
+  <!-- COLECCIÓN -->
+  <section class="view" id="v-col" aria-labelledby="t-col">
+    <div class="top"><h2>Mi colección</h2>
+      <select id="col-sort" aria-label="Orden de la colección">
+        <option value="added">Últimas añadidas</option>
+        <option value="dex">Nº Pokédex</option>
+        <option value="price">Precio (mayor primero)</option>
+        <option value="date">Fecha de la expansión</option>
+      </select>
+    </div>
+    <div class="stats" id="col-stats"></div>
+    <div class="row"><input type="search" id="col-q" placeholder="Buscar en mi colección" autocomplete="off"><button class="btn" id="col-prices" type="button">Actualizar precios</button></div>
+    <div class="cgrid" id="col-grid"></div>
+    <details class="backup" id="backup">
+      <summary>Copia de seguridad</summary>
+      <p class="small muted">Tus cartas se guardan en este navegador. Copia este texto para pasarlas a otro dispositivo o guardarlas; pega uno y pulsa «Importar» para recuperarlas.</p>
+      <div class="row"><button class="btn sm" type="button" id="bk-copy">Copiar copia</button><button class="btn sm" type="button" id="bk-file">Descargar archivo</button><label class="btn sm" for="bk-upload">Abrir archivo</label><input type="file" id="bk-upload" accept="application/json,.json" hidden></div>
+      <textarea id="bk-text" aria-label="Texto de la copia de seguridad" spellcheck="false"></textarea>
+      <div class="row"><button class="btn sm primary" type="button" id="bk-import">Importar</button><span class="small muted">Importar sustituye lo guardado ahora.</span></div>
+    </details>
+  </section>
+
+  <!-- COMPRA -->
+  <section class="view" id="v-buy" aria-labelledby="t-buy">
+    <div class="top"><h2>Lista de la compra</h2>
+      <select id="buy-sort" aria-label="Orden de la lista">
+        <option value="price">Precio (mayor primero)</option>
+        <option value="added">Orden en que las añadí</option>
+        <option value="dex">Nº Pokédex</option>
+      </select>
+    </div>
+    <div class="totals" id="totals"></div>
+    <div class="row"><button class="btn" type="button" id="buy-prices">Actualizar precios</button><button class="btn" type="button" id="buy-all">Marcar todas</button><span class="small muted" id="buy-note"></span></div>
+    <div style="display:grid;gap:10px" id="buy-list"></div>
+    <footer><p>Precio «tendencia» y «desde» de Cardmarket (cartas en inglés, cualquier estado), vía TCGdex; se actualizan una vez al día. Puedes escribir tu propio precio y se usará en el total. Desmarca una carta para dejarla fuera del total sin quitarla de la lista.</p></footer>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Secciones">
+  <button class="tab" role="tab" id="t-dex" aria-controls="v-dex" aria-selected="true" data-v="dex">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h6m6 0h6"/><circle cx="12" cy="12" r="3"/></svg>Pokédex</button>
+  <button class="tab" role="tab" id="t-col" aria-controls="v-col" aria-selected="false" data-v="col">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/></svg>Colección<span class="n" id="n-col"></span></button>
+  <button class="tab" role="tab" id="t-buy" aria-controls="v-buy" aria-selected="false" data-v="buy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>Compra<span class="n" id="n-buy"></span></button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="s-title" aria-hidden="true">
+  <div class="s-head">
+    <div id="s-img"></div>
+    <div><div class="dexno" id="s-no"></div><h3 id="s-title"></h3><div class="small muted" id="s-sub"></div></div>
+    <button class="close" id="s-close" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div class="s-body" id="s-body"></div>
+</aside>
+
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Carta">
+  <button class="v-close" id="v-close" type="button" aria-label="Cerrar">×</button>
+  <div class="v-inner" id="v-inner"></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+// ---------- Estado y almacenamiento ----------
+const KEY = 'pokedex-full-art-v1';
+const ST = (() => {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e) {}
+  s = s && typeof s === 'object' ? s : {};
+  return { owned: s.owned || {}, cart: s.cart || {}, prices: s.prices || {} };
+})();
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch(e) { toast('No se ha podido guardar en este navegador'); } }
+
+const GROUPS = [
+  {k:'IR', label:'Illustration Rare', c:'var(--g-IR)'},
+  {k:'SIR', label:'Special Illustration Rare', c:'var(--g-SIR)'},
+  {k:'G', label:'Trainer/Galarian Gallery', c:'var(--g-G)'},
+];
+const GBY = Object.fromEntries(GROUPS.map(g=>[g.k,g]));
+const GENS = [[1,151,'Kanto'],[152,251,'Johto'],[252,386,'Hoenn'],[387,493,'Sinnoh'],[494,649,'Teselia'],[650,721,'Kalos'],[722,809,'Alola'],[810,905,'Galar'],[906,1025,'Paldea']];
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX'];
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const pad = n => '#' + String(n).padStart(4,'0');
+const fmtDate = d => { const [y,m] = d.split('-'); return `${MONTHS[+m-1]} ${y}`; };
+const eur = v => v == null || isNaN(v) ? '—' : v.toLocaleString('es-ES',{style:'currency',currency:'EUR'});
+const genOf = n => GENS.findIndex(([a,b])=>n>=a&&n<=b)+1;
+const sprite = n => `sprites/${n}.png`;
+const smallImg = u => u.replace('_hires.png','.png').replace(/\/large$/,'/small');
+
+let DATA, CARDS, POKE;
+
+// ---------- Precios (Cardmarket vía TCGdex; respaldo pokemontcg.io) ----------
+const DAY = 864e5;
+const num = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+async function fetchJSON(url){
+  const r = await fetch(url, {headers:{'Accept':'application/json'}});
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function fetchPrice(card){
+  if(card.t){
+    try{
+      const j = await fetchJSON(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(card.t)}`);
+      const cm = j && j.pricing && j.pricing.cardmarket;
+      if(cm){
+        let p = {trend:num(cm.trend), low:num(cm.low), avg:num(cm.avg), avg30:num(cm.avg30), avg7:num(cm.avg7)};
+        if(!p.trend && !p.low && !p.avg){ p = {trend:num(cm['trend-holo']), low:num(cm['low-holo']), avg:num(cm['avg-holo']), avg30:num(cm['avg30-holo']), avg7:num(cm['avg7-holo'])}; }
+        if(p.trend || p.low || p.avg) return {...p, src:'tcgdex', t:Date.now()};
+      }
+    }catch(e){}
+  }
+  try{
+    const j = await fetchJSON(`https://api.pokemontcg.io/v2/cards/${encodeURIComponent(card.id)}?select=id,cardmarket`);
+    const pr = j && j.data && j.data.cardmarket && j.data.cardmarket.prices;
+    if(pr){
+      const p = {trend:num(pr.trendPrice), low:num(pr.lowPrice), avg:num(pr.averageSellPrice), avg30:num(pr.avg30), avg7:num(pr.avg7)};
+      if(p.trend || p.low || p.avg) return {...p, src:'pokemontcg', t:Date.now()};
+    }
+  }catch(e){}
+  return {none:true, t:Date.now()};
+}
+const inflight = new Map();
+let queue = [], active = 0;
+function pump(){
+  while(active < 4 && queue.length){
+    const {card, resolve} = queue.shift(); active++;
+    fetchPrice(card).then(p=>{ ST.prices[card.id] = p; save(); resolve(p); }).finally(()=>{ active--; pump(); });
+  }
+}
+function getPrice(card, force){
+  const c = ST.prices[card.id];
+  const maxAge = c && c.none ? DAY/4 : DAY;
+  if(!force && c && Date.now() - c.t < maxAge) return Promise.resolve(c);
+  if(inflight.has(card.id)) return inflight.get(card.id);
+  const pr = new Promise(resolve => { queue.push({card, resolve}); pump(); }).finally(()=>inflight.delete(card.id));
+  inflight.set(card.id, pr);
+  return pr;
+}
+const refPrice = id => { const p = ST.prices[id]; return p && !p.none ? (p.trend ?? p.avg30 ?? p.avg ?? p.low ?? null) : null; };
+function priceHTML(id){
+  const p = ST.prices[id];
+  if(!p) return '<span class="na">Cargando precio…</span>';
+  if(p.none) return '<span class="na">Sin precio en Cardmarket</span>';
+  return `<span>Tendencia <b>${eur(p.trend ?? p.avg30 ?? p.avg)}</b></span><span>Desde ${eur(p.low)}</span>${p.avg30?`<span class="muted">Media 30 d ${eur(p.avg30)}</span>`:''}`;
+}
+function loadPrices(ids, force, after){
+  const list = ids.map(id=>CARDS[id]).filter(Boolean);
+  let left = list.length;
+  if(!left){ after && after(); return Promise.resolve(); }
+  return Promise.all(list.map(c => getPrice(c, force).then(()=>{
+    document.querySelectorAll(`[data-price="${CSS.escape(c.id)}"]`).forEach(el=>el.innerHTML = priceHTML(c.id));
+    if(--left === 0 && after) after();
+  })));
+}
+
+// ---------- Acciones ----------
+function setOwned(id, on){
+  if(on){ ST.owned[id] = {t:Date.now()}; if(ST.cart[id]) delete ST.cart[id]; }
+  else delete ST.owned[id];
+  save(); refreshAll();
+}
+function setCart(id, on){
+  if(on){ ST.cart[id] = {t:Date.now(), sel:true}; getPrice(CARDS[id]).then(()=>{ if(view==='buy') renderBuy(); }); }
+  else delete ST.cart[id];
+  save(); refreshAll();
+}
+function syncButtons(id){
+  document.querySelectorAll(`[data-own="${CSS.escape(id)}"]`).forEach(b=>{ const on=!!ST.owned[id]; b.setAttribute('aria-pressed',on); b.textContent = on ? '✓ La tengo' : 'La tengo'; });
+  document.querySelectorAll(`[data-cart="${CSS.escape(id)}"]`).forEach(b=>{ const on=!!ST.cart[id]; b.setAttribute('aria-pressed',on); b.textContent = on ? 'En la lista' : 'Quiero comprarla'; });
+}
+document.addEventListener('click', e=>{
+  const own = e.target.closest('[data-own]');
+  if(own){ const id = own.dataset.own; const on = !ST.owned[id]; setOwned(id, on); syncButtons(id); toast(on ? 'Añadida a tu colección' : 'Quitada de tu colección'); return; }
+  const cart = e.target.closest('[data-cart]');
+  if(cart){ const id = cart.dataset.cart; const on = !ST.cart[id]; setCart(id, on); syncButtons(id); toast(on ? 'Añadida a la lista de la compra' : 'Quitada de la lista'); return; }
+  const z = e.target.closest('[data-zoom]');
+  if(z){ openViewer(z.dataset.zoom); return; }
+});
+let toastT;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
+
+// ---------- Helpers de carta ----------
+function cardTitle(c){ return c.ne || c.n; }
+function setName(c){ return c.se || c.s; }
+function cmURL(c){ return 'https://www.cardmarket.com/es/Pokemon/Products/Search?searchString=' + encodeURIComponent(c.n); }
+function pokeNames(c){ return c.dex.map(n=>POKE.get(n)?.es || DATA.names[n]?.[0]).filter(Boolean).join(' & '); }
+function imgTag(c, cls){
+  return `<img src="${esc(smallImg(c.img))}" data-full="${esc(c.img)}" alt="${esc(c.n)}" loading="lazy" decoding="async" onerror="if(this.src!==this.dataset.full){this.src=this.dataset.full}">`;
+}
+function pill(c){ const g=GBY[c.g]; return `<span class="pill"><span class="dot" style="background:${g.c}"></span>${esc(g.label)}</span>`; }
+function cardRow(c, opts={}){
+  const g = GBY[c.g];
+  return `<article class="crow" style="border-left-color:${g.c}">
+    <button class="thumb" type="button" data-zoom="${esc(c.id)}" aria-label="Ver ${esc(c.n)} en grande">${imgTag(c)}</button>
+    <div class="cinfo">
+      <div class="ctop"><span class="cname">${esc(cardTitle(c))}</span><span class="cnum">${esc(c.num)}/${c.tot}</span></div>
+      <div class="cmeta">${esc(setName(c))} · ${fmtDate(c.d)}</div>
+      <div class="cmeta">${pill(c)}${c.a?` · ${esc(c.a)}`:''}</div>
+      <div class="price" data-price="${esc(c.id)}">${priceHTML(c.id)}</div>
+      ${opts.extra || ''}
+      <div class="cact">
+        <button class="btn sm own" type="button" data-own="${esc(c.id)}" aria-pressed="${!!ST.owned[c.id]}">${ST.owned[c.id]?'✓ La tengo':'La tengo'}</button>
+        ${opts.noCart ? '' : `<button class="btn sm cart" type="button" data-cart="${esc(c.id)}" aria-pressed="${!!ST.cart[c.id]}">${ST.cart[c.id]?'En la lista':'Quiero comprarla'}</button>`}
+        <a class="btn sm" href="${cmURL(c)}" target="_blank" rel="noopener">Cardmarket</a>
+      </div>
+    </div>
+  </article>`;
+}
+
+// ---------- Pokédex ----------
+const state = {q:'', sort:'dex', gens:new Set(), groups:new Set(), status:'all', missing:false};
+function ownedCount(p){ return p.c.filter(id=>ST.owned[id]).length; }
+function cartCount(p){ return p.c.filter(id=>ST.cart[id]).length; }
+function renderDexStats(){
+  const got = DATA.pokemon.filter(p=>ownedCount(p)>0).length;
+  const total = DATA.pokemon.length;
+  const nOwned = Object.keys(ST.owned).filter(id=>CARDS[id]).length;
+  $('dex-stats').innerHTML = `
+    <div class="stat"><b>${got} / ${total}</b><span>Pokémon conseguidos</span><div class="progress"><i style="width:${(got/total*100).toFixed(1)}%"></i></div></div>
+    <div class="stat"><b>${nOwned} / ${DATA.cards.length}</b><span>cartas en tu colección</span><div class="progress"><i style="width:${(nOwned/DATA.cards.length*100).toFixed(1)}%;background:var(--ok)"></i></div></div>`;
+}
+function mkChips(el, items, onClick){
+  items.forEach(it=>{
+    const b = document.createElement('button');
+    b.className='chip'; b.type='button'; b.setAttribute('aria-pressed', it.on ? 'true':'false');
+    b.innerHTML = (it.c?`<span class="dot" style="background:${it.c}"></span>`:'') + esc(it.label);
+    b.addEventListener('click',()=>onClick(it, b));
+    el.appendChild(b);
+  });
+}
+function filteredIds(p){ return state.groups.size ? p.c.filter(id=>state.groups.has(CARDS[id].g)) : p.c; }
+function matchesQ(n, es, en){
+  const q = norm(state.q.trim()); if(!q) return true;
+  if(/^#?\d+$/.test(q)) return String(n) === q.replace('#','').replace(/^0+/,'');
+  return norm(es).includes(q) || norm(en).includes(q);
+}
+function barHTML(ids){
+  const cnt={}; ids.forEach(id=>{const g=CARDS[id].g; cnt[g]=(cnt[g]||0)+1;});
+  return '<div class="bar" aria-hidden="true">'+GROUPS.filter(g=>cnt[g.k]).map(g=>`<i style="flex:${cnt[g.k]};background:${g.c}"></i>`).join('')+'</div>';
+}
+function renderDex(){
+  renderDexStats();
+  const list = [];
+  for(let n=1;n<=1025;n++){
+    const gen = genOf(n);
+    if(state.gens.size && !state.gens.has(gen)) continue;
+    const names = DATA.names[n] || [String(n),String(n)];
+    if(!matchesQ(n, names[0], names[1])) continue;
+    const p = POKE.get(n);
+    if(p){
+      const ids = filteredIds(p);
+      if(ids.length){
+        const own = ids.filter(id=>ST.owned[id]).length;
+        if(state.status==='got' && !own) continue;
+        if(state.status==='missing' && own) continue;
+        list.push({n, gen, es:names[0], ids, own, cart:ids.filter(id=>ST.cart[id]).length, has:true});
+        continue;
+      }
+    }
+    if(state.missing && state.status==='all') list.push({n, gen, es:names[0], ids:[], has:false});
+  }
+  if(state.sort==='cards') list.sort((a,b)=>b.ids.length-a.ids.length||a.n-b.n);
+  else if(state.sort==='name') list.sort((a,b)=>a.es.localeCompare(b.es,'es'));
+  const withC = list.filter(x=>x.has);
+  $('count').textContent = `${withC.length} Pokémon · ${new Set(withC.flatMap(x=>x.ids)).size} cartas`;
+  const grid = $('grid');
+  if(!list.length){ grid.innerHTML = '<p class="empty" style="grid-column:1/-1">Ningún Pokémon coincide con estos filtros.</p>'; return; }
+  let h='', last=0;
+  list.forEach(x=>{
+    if(state.sort==='dex' && x.gen!==last){
+      last=x.gen; const g=GENS[x.gen-1];
+      const inGen = DATA.pokemon.filter(p=>p.gen===x.gen);
+      const gotGen = inGen.filter(p=>ownedCount(p)>0).length;
+      h += `<h3 class="gen-h">Gen ${ROMAN[x.gen-1]} · ${g[2]} <small>${inGen.length} de ${g[1]-g[0]+1} con carta ilustrada · ${gotGen} conseguidos</small></h3>`;
+    }
+    if(x.has){
+      h += `<button class="tile${x.own?' got':''}" type="button" data-n="${x.n}" aria-label="${esc(x.es)}: ${x.ids.length} cartas, ${x.own} en tu colección">
+        ${x.own?`<span class="badge">${x.own}/${x.ids.length}</span>`:''}${x.cart?`<span class="badge cartb">${x.cart} 🛒</span>`:''}
+        <img src="${sprite(x.n)}" alt="" loading="lazy"><span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span>
+        <span class="ncards">${x.ids.length} ${x.ids.length===1?'carta':'cartas'}</span>${barHTML(x.ids)}</button>`;
+    } else {
+      h += `<div class="tile none"><div class="ph">–</div><span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span><span class="ncards">sin carta</span></div>`;
+    }
+  });
+  grid.innerHTML = h;
+}
+$('grid').addEventListener('click', e=>{ const t=e.target.closest('.tile[data-n]'); if(t) openSheet(+t.dataset.n); });
+
+// ---------- Hoja de Pokémon ----------
+const sheet=$('sheet'), scrim=$('scrim');
+let sheetN = null, lastFocus = null;
+function openSheet(n){
+  const p = POKE.get(n); if(!p) return;
+  sheetN = n; lastFocus = document.activeElement;
+  $('s-img').innerHTML = `<img src="${sprite(n)}" alt="">`;
+  $('s-no').textContent = pad(n) + ' · Gen ' + ROMAN[p.gen-1];
+  $('s-title').textContent = p.es;
+  renderSheetBody();
+  sheet.classList.add('open'); scrim.classList.add('open'); sheet.setAttribute('aria-hidden','false');
+  $('s-body').scrollTop = 0; $('s-close').focus({preventScroll:true});
+  loadPrices(p.c);
+}
+function renderSheetBody(){
+  const p = POKE.get(sheetN); if(!p) return;
+  const own = ownedCount(p);
+  $('s-sub').textContent = (p.en!==p.es ? p.en + ' · ' : '') + `${own} de ${p.c.length} cartas en tu colección`;
+  const cards = p.c.map(id=>CARDS[id]).sort((a,b)=>b.d.localeCompare(a.d));
+  $('s-body').innerHTML = cards.map(c=>cardRow(c)).join('');
+}
+function closeSheet(){ sheet.classList.remove('open'); scrim.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); sheetN=null; if(lastFocus) lastFocus.focus({preventScroll:true}); }
+$('s-close').addEventListener('click', closeSheet);
+scrim.addEventListener('click', closeSheet);
+
+// ---------- Visor de carta ----------
+const viewer = $('viewer');
+let viewerId = null, viewerFocus = null;
+function openViewer(id){
+  const c = CARDS[id]; if(!c) return;
+  viewerId = id; viewerFocus = document.activeElement;
+  $('v-inner').innerHTML = `
+    <img src="${esc(c.img)}" alt="${esc(c.n)}">
+    <div style="display:grid;gap:4px">
+      <div class="ctop"><span class="cname" style="font-size:18px">${esc(cardTitle(c))}</span><span class="cnum" style="color:#a9b3c1">${esc(c.num)}/${c.tot}</span></div>
+      <div class="cmeta">${esc(pokeNames(c))} · ${c.dex.map(pad).join(' ')}</div>
+      <div class="cmeta">${esc(setName(c))}${c.se?` (${esc(c.s)})`:''} · ${fmtDate(c.d)}</div>
+      <div class="cmeta">${esc(GBY[c.g].label)}${c.a?` · Ilustración: ${esc(c.a)}`:''}</div>
+      <div class="price" data-price="${esc(c.id)}">${priceHTML(c.id)}</div>
+      <div class="cact">
+        <button class="btn sm own" type="button" data-own="${esc(c.id)}" aria-pressed="${!!ST.owned[c.id]}">${ST.owned[c.id]?'✓ La tengo':'La tengo'}</button>
+        <button class="btn sm cart" type="button" data-cart="${esc(c.id)}" aria-pressed="${!!ST.cart[c.id]}">${ST.cart[c.id]?'En la lista':'Quiero comprarla'}</button>
+        <a class="btn sm" href="${cmURL(c)}" target="_blank" rel="noopener">Cardmarket</a>
+      </div>
+    </div>`;
+  viewer.classList.add('open'); $('v-close').focus({preventScroll:true});
+  loadPrices([id]);
+}
+function closeViewer(){ viewer.classList.remove('open'); viewerId=null; if(viewerFocus) viewerFocus.focus({preventScroll:true}); }
+$('v-close').addEventListener('click', closeViewer);
+viewer.addEventListener('click', e=>{ if(e.target===viewer) closeViewer(); });
+document.addEventListener('keydown', e=>{ if(e.key!=='Escape') return; if(viewer.classList.contains('open')) closeViewer(); else if(sheet.classList.contains('open')) closeSheet(); });
+
+// ---------- Colección ----------
+function ownedCards(){ return Object.keys(ST.owned).filter(id=>CARDS[id]).map(id=>CARDS[id]); }
+function renderCol(){
+  const all = ownedCards();
+  const pokes = new Set(all.flatMap(c=>c.dex)).size;
+  const priced = all.map(c=>refPrice(c.id)).filter(v=>v!=null);
+  const value = priced.reduce((s,v)=>s+v,0);
+  $('col-stats').innerHTML = `
+    <div class="stat"><b>${all.length}</b><span>cartas</span></div>
+    <div class="stat"><b>${pokes}</b><span>Pokémon distintos</span></div>
+    <div class="stat"><b>${eur(value)}</b><span>valor estimado${priced.length<all.length?` (${priced.length} de ${all.length} con precio)`:''}</span></div>`;
+  const q = norm($('col-q').value.trim());
+  let list = all.filter(c=>!q || norm(cardTitle(c)+' '+c.n+' '+pokeNames(c)+' '+setName(c)+' '+c.s).includes(q));
+  const s = $('col-sort').value;
+  if(s==='added') list.sort((a,b)=>ST.owned[b.id].t-ST.owned[a.id].t);
+  else if(s==='dex') list.sort((a,b)=>a.dex[0]-b.dex[0]||a.d.localeCompare(b.d));
+  else if(s==='price') list.sort((a,b)=>(refPrice(b.id)??-1)-(refPrice(a.id)??-1));
+  else list.sort((a,b)=>b.d.localeCompare(a.d));
+  const grid = $('col-grid');
+  if(!all.length){ grid.innerHTML = `<p class="empty" style="grid-column:1/-1">Aún no has marcado ninguna carta. En la Pokédex, abre un Pokémon y pulsa «La tengo» en sus cartas.</p>`; return; }
+  if(!list.length){ grid.innerHTML = `<p class="empty" style="grid-column:1/-1">Ninguna carta de tu colección coincide con la búsqueda.</p>`; return; }
+  grid.innerHTML = list.map(c=>`<button class="ccard" type="button" data-zoom="${esc(c.id)}">
+      <div class="img">${imgTag(c)}</div>
+      <div class="t">${esc(cardTitle(c))}</div>
+      <div class="m">${esc(setName(c))} · ${esc(c.num)}/${c.tot}<br><span class="dot" style="display:inline-block;background:${GBY[c.g].c};margin-right:4px"></span>${esc(GBY[c.g].label)}${c.a?` · ${esc(c.a)}`:''}</div>
+      <div class="m" data-price="${esc(c.id)}">${ST.prices[c.id] ? (refPrice(c.id)!=null ? 'Tendencia ' + eur(refPrice(c.id)) : 'Sin precio') : ''}</div>
+    </button>`).join('');
+}
+$('col-q').addEventListener('input', renderCol);
+$('col-sort').addEventListener('change', renderCol);
+$('col-prices').addEventListener('click', ()=>{ toast('Actualizando precios…'); loadPrices(ownedCards().map(c=>c.id), true, ()=>{ renderCol(); toast('Precios actualizados'); }); });
+
+// ---------- Compra ----------
+function cartCards(){ return Object.keys(ST.cart).filter(id=>CARDS[id]).map(id=>CARDS[id]); }
+function usedPrice(id){ const m = ST.cart[id] && ST.cart[id].manual; return num(m) ?? refPrice(id); }
+function renderTotals(){
+  const all = cartCards();
+  const sel = all.filter(c=>ST.cart[c.id].sel !== false);
+  const total = sel.reduce((s,c)=>s+(usedPrice(c.id)??0),0);
+  const low = sel.reduce((s,c)=>{ const m=num(ST.cart[c.id].manual); const p=ST.prices[c.id]; return s+(m ?? (p&&!p.none?(p.low??p.trend??0):0)); },0);
+  const noPrice = sel.filter(c=>usedPrice(c.id)==null).length;
+  $('totals').innerHTML = `
+    <div><div class="lbl">Total seleccionado</div><div class="big">${eur(total)}</div></div>
+    <div class="sub">${sel.length} de ${all.length} cartas<br>Con precios «desde»: ${eur(low)}${noPrice?`<br>${noPrice} sin precio`:''}</div>`;
+  $('n-buy').textContent = all.length || '';
+}
+function renderBuy(){
+  renderTotals();
+  const all = cartCards();
+  const s = $('buy-sort').value;
+  if(s==='price') all.sort((a,b)=>(usedPrice(b.id)??-1)-(usedPrice(a.id)??-1));
+  else if(s==='added') all.sort((a,b)=>ST.cart[a.id].t-ST.cart[b.id].t);
+  else all.sort((a,b)=>a.dex[0]-b.dex[0]);
+  const times = all.map(c=>ST.prices[c.id]?.t).filter(Boolean);
+  $('buy-note').textContent = times.length ? 'Precios del ' + new Date(Math.min(...times)).toLocaleDateString('es-ES',{day:'numeric',month:'short'}) : '';
+  const el = $('buy-list');
+  if(!all.length){ el.innerHTML = `<p class="empty">Tu lista está vacía. En la Pokédex, abre un Pokémon y pulsa «Quiero comprarla» en las cartas que te interesen.</p>`; return; }
+  el.innerHTML = all.map(c=>{
+    const it = ST.cart[c.id];
+    const extra = `<div class="row" style="gap:12px">
+        <label class="manual"><input type="checkbox" class="sel-check" data-sel="${esc(c.id)}" ${it.sel!==false?'checked':''}> Contar en el total</label>
+        <label class="manual">Mi precio <input type="text" inputmode="decimal" autocomplete="off" placeholder="${refPrice(c.id)!=null?refPrice(c.id).toFixed(2):'€'}" value="${num(it.manual)!=null?it.manual:''}" data-manual="${esc(c.id)}" aria-label="Mi precio para ${esc(c.n)}"> €</label>
+      </div>`;
+    return cardRow(c, {extra}).replace('class="cact">', `class="cact"><button class="btn sm" type="button" data-bought="${esc(c.id)}">Comprada</button>`);
+  }).join('');
+}
+$('buy-list').addEventListener('change', e=>{
+  const s = e.target.closest('[data-sel]');
+  if(s){ ST.cart[s.dataset.sel].sel = s.checked; save(); renderTotals(); }
+});
+$('buy-list').addEventListener('input', e=>{
+  const m = e.target.closest('[data-manual]');
+  if(m){ const v = parseFloat(m.value.replace(',','.')); ST.cart[m.dataset.manual].manual = isFinite(v) && v>0 ? v : null; save(); renderTotals(); }
+});
+$('buy-list').addEventListener('click', e=>{
+  const b = e.target.closest('[data-bought]');
+  if(b){ setOwned(b.dataset.bought, true); toast('¡Comprada! Pasa a tu colección'); }
+});
+$('buy-sort').addEventListener('change', renderBuy);
+$('buy-prices').addEventListener('click', ()=>{ toast('Actualizando precios…'); loadPrices(cartCards().map(c=>c.id), true, ()=>{ renderBuy(); toast('Precios actualizados'); }); });
+$('buy-all').addEventListener('click', ()=>{ const all=cartCards(); const allOn = all.every(c=>ST.cart[c.id].sel!==false); all.forEach(c=>ST.cart[c.id].sel = !allOn); save(); renderBuy(); });
+
+// ---------- Copia de seguridad ----------
+function exportText(){ return JSON.stringify({app:'pokedex-full-art', v:1, fecha:new Date().toISOString(), owned:ST.owned, cart:ST.cart}); }
+$('backup').addEventListener('toggle', ()=>{ if($('backup').open) $('bk-text').value = exportText(); });
+$('bk-copy').addEventListener('click', async ()=>{
+  const t = exportText(); $('bk-text').value = t;
+  try{ await navigator.clipboard.writeText(t); toast('Copia copiada'); }catch(e){ $('bk-text').select(); toast('Selecciona el texto y cópialo'); }
+});
+$('bk-file').addEventListener('click', ()=>{
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([exportText()],{type:'application/json'}));
+  a.download = 'pokedex-full-art-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$('bk-upload').addEventListener('change', async e=>{ const f=e.target.files[0]; if(f){ $('bk-text').value = await f.text(); toast('Archivo cargado: pulsa Importar'); } });
+$('bk-import').addEventListener('click', ()=>{
+  try{
+    const j = JSON.parse($('bk-text').value);
+    if(!j || typeof j.owned!=='object') throw 0;
+    ST.owned = j.owned || {}; ST.cart = j.cart || {}; save(); refreshAll(); toast('Copia importada');
+  }catch(e){ toast('Ese texto no es una copia válida'); }
+});
+
+// ---------- Navegación ----------
+let view = 'dex';
+function show(v){
+  view = v;
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active', s.id==='v-'+v));
+  if(v==='col'){ renderCol(); loadPrices(ownedCards().map(c=>c.id), false, renderCol); }
+  if(v==='buy'){ renderBuy(); loadPrices(cartCards().map(c=>c.id), false, renderBuy); }
+  if(v==='dex') renderDex();
+  try{ history.replaceState(null,'', v==='dex' ? location.pathname : '#'+(v==='col'?'coleccion':'compra')); }catch(e){}
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>show(t.dataset.v)));
+function refreshAll(){
+  $('n-col').textContent = Object.keys(ST.owned).filter(id=>CARDS[id]).length || '';
+  $('n-buy').textContent = Object.keys(ST.cart).filter(id=>CARDS[id]).length || '';
+  if(view==='dex') renderDex();
+  if(view==='col') renderCol();
+  if(view==='buy') renderBuy();
+  if(sheetN!=null) { const y=$('s-body').scrollTop; renderSheetBody(); $('s-body').scrollTop=y; }
+  if(viewerId) syncButtons(viewerId);
+}
+
+// ---------- Arranque ----------
+fetch('data.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  CARDS = Object.fromEntries(d.cards.map(c=>[c.id,c]));
+  POKE = new Map(d.pokemon.map(p=>[p.dex,p]));
+  $('updated').textContent = 'Datos hasta ' + d.updated;
+  mkChips($('status-chips'), [{v:'all',label:'Todos',on:true},{v:'got',label:'Conseguidos'},{v:'missing',label:'Me faltan'}], (it,b)=>{
+    state.status = it.v; $('status-chips').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed', x===b)); renderDex();
+  });
+  mkChips($('gens'), GENS.map((g,i)=>({v:i+1,label:`${ROMAN[i]} · ${g[2]}`})), (it,b)=>{
+    state.gens.has(it.v) ? state.gens.delete(it.v) : state.gens.add(it.v); b.setAttribute('aria-pressed', state.gens.has(it.v)); renderDex();
+  });
+  mkChips($('groups'), GROUPS.map(g=>({v:g.k,label:g.label,c:g.c})), (it,b)=>{
+    state.groups.has(it.v) ? state.groups.delete(it.v) : state.groups.add(it.v); b.setAttribute('aria-pressed', state.groups.has(it.v)); renderDex();
+  });
+  $('q').addEventListener('input', e=>{ state.q = e.target.value; renderDex(); });
+  $('sort').addEventListener('change', e=>{ state.sort = e.target.value; renderDex(); });
+  $('showMissing').addEventListener('change', e=>{ state.missing = e.target.checked; renderDex(); });
+  const h = location.hash;
+  refreshAll();
+  if(h==='#coleccion') show('col'); else if(h==='#compra') show('buy');
+}).catch(()=>{ $('grid').innerHTML = '<p class="empty" style="grid-column:1/-1">No se han podido cargar los datos. Comprueba la conexión y recarga.</p>'; });
+
+if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
