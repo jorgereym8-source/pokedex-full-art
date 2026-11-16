@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pokédex Full Art</title>
-<meta name="theme-color" content="#d4372c">
+<meta name="theme-color" content="#eef1f5" id="meta-theme">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,162 +14,206 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link id="font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: cabecera fija + vista activa + barra de pestañas inferior (Pokédex · Colección · Compra); hoja inferior/lateral para detalle */
+/* Layout: vista activa + barra de pestañas inferior (Pokédex · Colección · Compra · Ajustes); hoja inferior/lateral para el detalle.
+   Todos los colores, formas y letras salen de variables que fija applySettings() según los ajustes del usuario. */
 :root{
-  --bg:#eef1f5; --surface:#ffffff; --ink:#18202b; --muted:#5d6878; --line:#d5dbe3; --accent:#d4372c; --accent-soft:#fbe4e2;
-  --ok:#1f8a4c; --ok-soft:#dcf2e5;
+  --bg:#eef1f5; --surface:#ffffff; --surface-a:#ffffff; --ink:#18202b; --muted:#5d6878; --line:#d5dbe3;
+  --accent:#d4372c; --accent-ink:#ffffff; --accent-soft:#fbe4e2; --ok:#1f8a4c; --ok-soft:#dcf2e5;
+  --g-IR:#119c8a; --g-SIR:#c2338f; --g-G:#7a55d0;
   --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
   --font-body:"IBM Plex Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
-  --g-IR:#119c8a; --g-SIR:#c2338f; --g-G:#7a55d0;
+  --display-scale:1; --title-weight:800; --title-case:none;
+  --fs:1; --rad:12px; --rad-s:9px; --btn-rad:999px; --bw:1px; --stripe:5px;
   --shadow:0 1px 2px rgba(24,32,43,.06),0 4px 14px rgba(24,32,43,.06);
+  --blur:0px; --tile-min:140px; --sprite:80px; --cols-phone:3; --col-cols:2;
   --tabh:64px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#10151d; --surface:#18202b; --ink:#e8edf3; --muted:#9aa6b6; --line:#2b3644; --accent:#ff6a5c; --accent-soft:#3a1f1e;
-    --ok:#4fd08a; --ok-soft:#173326;
-    --g-IR:#3cc9b4; --g-SIR:#ef6cbf; --g-G:#a487f0;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#10151d; --surface:#18202b; --ink:#e8edf3; --muted:#9aa6b6; --line:#2b3644; --accent:#ff6a5c; --accent-soft:#3a1f1e;
-  --ok:#4fd08a; --ok-soft:#173326;
-  --g-IR:#3cc9b4; --g-SIR:#ef6cbf; --g-G:#a487f0;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
-  color-scheme:dark;
+  :root{ --bg:#10151d; --surface:#18202b; --surface-a:#18202b; --ink:#e8edf3; --muted:#9aa6b6; --line:#2b3644; color-scheme:dark; }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:var(--font-body);font-size:15px;line-height:1.45;min-height:100dvh}
+html{font-size:calc(15px * var(--fs))}
+html,body{margin:0;background-color:var(--bg);color:var(--ink)}
+body{font-family:var(--font-body);font-size:1rem;line-height:1.45;min-height:100dvh;background-attachment:fixed}
 a{color:inherit}
-button{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[data-anim="off"] *{transition:none!important;animation:none!important}
 .wrap{max-width:1200px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) max(16px,env(safe-area-inset-right)) calc(var(--tabh) + env(safe-area-inset-bottom) + 28px) max(16px,env(safe-area-inset-left));display:grid;gap:16px}
-.view{display:none;gap:16px}
+.view{display:none;gap:16px;min-width:0}
 .view.active{display:grid}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-h1{font-family:var(--font-display);font-weight:800;font-size:clamp(26px,5vw,36px);letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:10px;text-wrap:balance}
-h2{font-family:var(--font-display);font-weight:800;font-size:clamp(24px,4.5vw,32px);letter-spacing:-.02em;margin:0}
+h1,h2{font-family:var(--font-display);font-weight:var(--title-weight);text-transform:var(--title-case);letter-spacing:-.01em;margin:0;text-wrap:balance;line-height:1.1}
+h1{font-size:calc(2.2rem * var(--display-scale));display:flex;align-items:center;gap:10px}
+h2{font-size:calc(2rem * var(--display-scale))}
 .ball{width:.8em;height:.8em;border-radius:50%;border:3px solid var(--ink);background:linear-gradient(var(--accent) 0 44%,var(--ink) 44% 56%,var(--surface) 56%);position:relative;flex:none}
 .ball::after{content:"";position:absolute;inset:50% auto auto 50%;width:.26em;height:.26em;transform:translate(-50%,-50%);border-radius:50%;background:var(--surface);border:2px solid var(--ink)}
 .muted{color:var(--muted)}
-.small{font-size:13px}
+.small{font-size:.87rem}
+.glass{background:var(--surface-a);-webkit-backdrop-filter:blur(var(--blur));backdrop-filter:blur(var(--blur))}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-.stat b{display:block;font-family:var(--font-display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
-.stat span{color:var(--muted);font-size:13px}
+.stat{border:var(--bw) solid var(--line);border-radius:var(--rad);padding:10px 14px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--font-display);font-size:calc(1.6rem * var(--display-scale));font-weight:var(--title-weight);font-variant-numeric:tabular-nums;line-height:1.15}
+.stat span{color:var(--muted);font-size:.87rem}
 .progress{height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
 .progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
-.controls{display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.controls{display:grid;gap:10px;border:var(--bw) solid var(--line);border-radius:var(--rad);padding:12px;box-shadow:var(--shadow);min-width:0}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .chips::-webkit-scrollbar{display:none}
-input[type=search],input[type=number],input[type=text],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+input[type=search],input[type=text],select,textarea{font-size:16px;background:var(--bg);border:var(--bw) solid var(--line);border-radius:var(--rad-s);padding:8px 12px}
 input[type=search]{flex:1 1 220px;min-width:0}
-.chip{font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
+.chip{font-size:.87rem;background:var(--bg);border:var(--bw) solid var(--line);border-radius:var(--btn-rad);padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.dot{width:9px;height:9px;border-radius:50%;flex:none}
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.btn{border:var(--bw) solid var(--line);background:var(--surface);border-radius:var(--btn-rad);padding:8px 14px;cursor:pointer;font-size:.93rem;font-weight:500;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
 .btn:hover{border-color:var(--ink)}
 .btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.btn.sm{padding:5px 10px;font-size:13px}
-.btn.own[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
-.btn.cart[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.count{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
-.gen-h{grid-column:1/-1;font-family:var(--font-display);font-weight:600;font-size:18px;margin:8px 0 0;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px;flex-wrap:wrap}
-.gen-h small{font-family:var(--font-body);font-weight:400;font-size:13px;color:var(--muted)}
+.btn.sm{padding:5px 11px;font-size:.87rem}
+.btn.cart[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--accent);border-color:var(--accent)}
+.count{color:var(--muted);font-size:.93rem;font-variant-numeric:tabular-nums}
+.gen-h{grid-column:1/-1;font-family:var(--font-display);font-weight:600;font-size:calc(1.2rem * var(--display-scale));text-transform:var(--title-case);margin:8px 0 0;display:flex;align-items:baseline;gap:10px;border-bottom:var(--bw) solid var(--line);padding-bottom:6px;flex-wrap:wrap}
+.gen-h small{font-family:var(--font-body);font-weight:400;font-size:.87rem;color:var(--muted);text-transform:none}
 /* Rejilla Pokédex */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.tile{all:unset;box-sizing:border-box;cursor:pointer;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 8px 12px;display:grid;gap:2px;justify-items:center;text-align:center;box-shadow:var(--shadow)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tile-min),1fr));gap:10px}
+.tile{all:unset;box-sizing:border-box;cursor:pointer;position:relative;border:var(--bw) solid var(--line);border-radius:var(--rad);padding:10px 8px 12px;display:grid;gap:2px;justify-items:center;align-content:start;text-align:center;box-shadow:var(--shadow);min-width:0;transition:transform .12s ease}
+.tile:hover{transform:translateY(-2px)}
 .tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.tile.got{border-color:var(--ok);background:linear-gradient(var(--ok-soft),var(--surface) 70%)}
+.tile.got{border-color:var(--ok);background:linear-gradient(var(--ok-soft),var(--surface-a) 70%)}
+[data-grey="on"] .tile:not(.got) img{filter:grayscale(1);opacity:.55}
 .tile.none{cursor:default;box-shadow:none;background:transparent;opacity:.55}
-.tile img{width:80px;height:80px;image-rendering:pixelated}
-.tile .ph{width:80px;height:80px;display:grid;place-items:center;color:var(--muted);font-family:var(--font-display);font-size:28px}
-.badge{position:absolute;top:8px;right:8px;font-size:11px;font-weight:600;color:#fff;background:var(--ok);border-radius:999px;padding:1px 7px;font-variant-numeric:tabular-nums}
-.badge.cartb{left:8px;right:auto;background:var(--accent)}
-.dexno{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.tile img{width:var(--sprite);height:var(--sprite);object-fit:contain}
+[data-sprite="pixel"] .tile img,[data-sprite="pixel"] .s-head img{image-rendering:pixelated}
+.tile .ph{width:var(--sprite);height:var(--sprite);display:grid;place-items:center;color:var(--muted);font-family:var(--font-display);font-size:1.8rem}
+.badge{position:absolute;top:7px;right:7px;font-size:.73rem;font-weight:600;color:#fff;background:var(--ok);border-radius:var(--btn-rad);padding:1px 7px;font-variant-numeric:tabular-nums}
+.badge.cartb{left:7px;right:auto;background:var(--accent);color:var(--accent-ink)}
+.dexno{font-family:var(--font-mono);font-size:.8rem;color:var(--muted)}
 .name{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
-.ncards{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ncards{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+[data-shownum="off"] .tile .dexno,[data-showcount="off"] .tile .ncards,[data-showbar="off"] .tile .bar{display:none}
 .bar{display:flex;width:100%;height:5px;border-radius:3px;overflow:hidden;margin-top:6px;background:var(--line)}
 .bar i{display:block;height:100%}
-.empty{padding:36px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px}
-/* Píldoras rareza */
-.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px 2px 8px;font-size:12px;font-weight:500;border:1px solid var(--line);white-space:nowrap}
-/* Filas de carta (detalle Pokémon / compra) */
-.crow{display:grid;grid-template-columns:84px 1fr;gap:12px;border:1px solid var(--line);border-left-width:5px;border-radius:12px;padding:10px;background:var(--surface)}
-.crow .thumb{all:unset;cursor:zoom-in;width:84px;aspect-ratio:63/88;border-radius:6px;overflow:hidden;background:var(--line);display:block}
+.empty{padding:36px 16px;text-align:center;color:var(--muted);background:var(--surface-a);border:var(--bw) dashed var(--line);border-radius:var(--rad)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:var(--btn-rad);padding:2px 10px 2px 8px;font-size:.8rem;font-weight:500;border:var(--bw) solid var(--line);white-space:nowrap}
+/* Filas de carta */
+.crow{display:grid;grid-template-columns:88px 1fr;gap:12px;border:var(--bw) solid var(--line);border-left-width:max(var(--bw),var(--stripe));border-radius:var(--rad);padding:10px;background:var(--surface)}
+.crow .thumb{all:unset;cursor:zoom-in;width:88px;aspect-ratio:63/88;border-radius:calc(var(--rad-s) * .7);overflow:hidden;background:var(--line);display:block;align-self:start}
 .crow .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.cinfo{display:grid;gap:3px;align-content:start;min-width:0}
+.cinfo{display:grid;gap:4px;align-content:start;min-width:0}
 .ctop{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .cname{font-weight:600;overflow-wrap:anywhere}
-.cnum{font-family:var(--font-mono);font-size:12px;color:var(--muted);white-space:nowrap}
-.cmeta{font-size:13px;color:var(--muted)}
-.cact{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.price{font-size:13px;font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
-.price b{font-size:15px}
-.price .na{color:var(--muted)}
+.cnum{font-family:var(--font-mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+.cmeta{font-size:.87rem;color:var(--muted)}
+.cact{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.price{font-size:.87rem;font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline}
+.price b{font-size:1rem}
+.price .na,.price .muted{color:var(--muted)}
+[data-prices="off"] .price,[data-prices="off"] .pricebit{display:none!important}
+.langs{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.langs .lbl{font-size:.8rem;color:var(--muted);margin-right:2px}
+.lang{border:var(--bw) solid var(--line);background:var(--bg);border-radius:var(--btn-rad);padding:4px 10px;cursor:pointer;font-size:.8rem;font-weight:600;letter-spacing:.03em;display:inline-flex;gap:5px;align-items:center}
+.lang[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.lang .ck{display:none}
+.lang[aria-pressed="true"] .ck{display:inline}
+.ltag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.04em;padding:1px 6px;border-radius:var(--btn-rad);background:var(--ink);color:var(--bg)}
+.manual{display:flex;align-items:center;gap:6px;font-size:.87rem;color:var(--muted)}
+.manual input[type=text]{width:90px;padding:5px 8px}
+.manual select{padding:5px 8px}
+.sel-check{width:20px;height:20px;accent-color:var(--accent)}
 /* Colección */
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.ccard{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:6px;align-content:start}
-.ccard .img{aspect-ratio:63/88;border-radius:9px;overflow:hidden;background:var(--line);box-shadow:var(--shadow)}
+.ccard{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:6px;align-content:start;min-width:0}
+.ccard .img{position:relative;aspect-ratio:63/88;border-radius:var(--rad-s);overflow:hidden;background:var(--line);box-shadow:var(--shadow)}
 .ccard img{width:100%;height:100%;object-fit:cover;display:block}
-.ccard .t{font-weight:600;font-size:14px;line-height:1.25}
-.ccard .m{font-size:12px;color:var(--muted);line-height:1.35}
+.ccard .ltags{position:absolute;left:6px;bottom:6px;display:flex;gap:4px;flex-wrap:wrap}
+.ccard .ltags .ltag{box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.ccard .t{font-weight:600;font-size:.93rem;line-height:1.25}
+.ccard .m{font-size:.8rem;color:var(--muted);line-height:1.35}
+[data-colinfo="off"] .ccard .t,[data-colinfo="off"] .ccard .m{display:none}
 /* Compra */
-.totals{background:var(--ink);color:var(--bg);border-radius:14px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
-.totals .big{font-family:var(--font-display);font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.totals .lbl{font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
-.totals .sub{font-size:14px;opacity:.85;font-variant-numeric:tabular-nums}
-.manual{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-.manual input[type=text]{width:92px;padding:5px 8px;font-size:16px}
-.sel-check{width:20px;height:20px;accent-color:var(--accent)}
+.totals{background:var(--ink);color:var(--bg);border-radius:calc(var(--rad) + 2px);padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+.totals .big{font-family:var(--font-display);font-size:calc(2.2rem * var(--display-scale));font-weight:var(--title-weight);line-height:1;font-variant-numeric:tabular-nums}
+.totals .lbl{font-size:.8rem;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+.totals .sub{font-size:.93rem;opacity:.85;font-variant-numeric:tabular-nums}
+/* Ajustes */
+.set-sec{border:var(--bw) solid var(--line);border-radius:var(--rad);padding:14px;display:grid;gap:14px;box-shadow:var(--shadow)}
+.set-sec h3{margin:0;font-family:var(--font-display);font-weight:var(--title-weight);text-transform:var(--title-case);font-size:calc(1.2rem * var(--display-scale))}
+.set-item{display:grid;gap:8px}
+.set-item > .lbl{font-size:.87rem;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.set-item > .lbl output{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:var(--bw) solid var(--line);background:var(--bg);border-radius:var(--btn-rad);padding:6px 12px;cursor:pointer;font-size:.87rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.93rem;cursor:pointer}
+.switch input{appearance:none;-webkit-appearance:none;width:46px;height:28px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.switch input:checked{background:var(--ok)}
+.switch input:checked::after{transform:translateX(18px)}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:10px}
+.theme{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:6px;justify-items:center;font-size:.8rem;text-align:center}
+.theme .pv{width:100%;aspect-ratio:4/3;border-radius:var(--rad-s);border:2px solid transparent;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.theme .pv i{position:absolute;left:12%;right:12%;top:18%;height:38%;border-radius:6px}
+.theme .pv b{position:absolute;right:12%;bottom:14%;width:22%;aspect-ratio:1;border-radius:50%}
+.theme .pv u{position:absolute;left:12%;bottom:18%;width:40%;height:9%;border-radius:4px;opacity:.6}
+.theme[aria-pressed="true"] .pv{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
+input[type=color]{width:44px;height:34px;border:var(--bw) solid var(--line);border-radius:var(--rad-s);padding:2px;background:var(--bg);cursor:pointer}
+.fonts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.fontbtn{all:unset;box-sizing:border-box;cursor:pointer;border:var(--bw) solid var(--line);border-radius:var(--rad-s);padding:10px 12px;display:grid;gap:2px;background:var(--bg)}
+.fontbtn[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.fontbtn .d{font-size:1.25rem;line-height:1.2;font-weight:700}
+.fontbtn .b{font-size:.8rem;color:var(--muted)}
+.rarity-colors{display:grid;gap:8px}
+.rarity-colors label{display:flex;align-items:center;gap:10px;font-size:.87rem}
 /* Pestañas */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:0 max(8px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px,env(safe-area-inset-left))}
-.tab{all:unset;cursor:pointer;height:var(--tabh);display:grid;place-items:center;align-content:center;gap:2px;font-size:12px;font-weight:500;color:var(--muted);position:relative}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;border-top:var(--bw) solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:0 max(8px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px,env(safe-area-inset-left))}
+.tab{all:unset;cursor:pointer;height:var(--tabh);display:grid;place-items:center;align-content:center;gap:2px;font-size:.8rem;font-weight:500;color:var(--muted);position:relative}
 .tab svg{width:24px;height:24px}
 .tab[aria-selected="true"]{color:var(--accent)}
-.tab .n{position:absolute;top:8px;left:calc(50% + 8px);background:var(--accent);color:#fff;font-size:10px;font-weight:600;border-radius:999px;padding:0 6px;line-height:16px;font-variant-numeric:tabular-nums}
+[data-tablabels="off"] .tab .tl{display:none}
+.tab .n{position:absolute;top:8px;left:calc(50% + 8px);background:var(--accent);color:var(--accent-ink);font-size:.67rem;font-weight:600;border-radius:999px;padding:0 6px;line-height:16px;font-variant-numeric:tabular-nums}
 .tab .n:empty{display:none}
 /* Hoja de detalle */
 .scrim{position:fixed;inset:0;background:rgba(10,14,20,.45);display:none;z-index:30}
 .scrim.open{display:block}
-.sheet{position:fixed;z-index:31;background:var(--surface);display:grid;grid-template-rows:auto 1fr;box-shadow:0 -8px 30px rgba(0,0,0,.2);transition:transform .22s ease;
-  left:0;right:0;bottom:0;max-height:92dvh;border-radius:18px 18px 0 0;transform:translateY(105%);visibility:hidden}
+.sheet{position:fixed;z-index:31;background:var(--bg);display:grid;grid-template-rows:auto 1fr;box-shadow:0 -8px 30px rgba(0,0,0,.2);transition:transform .22s ease;left:0;right:0;bottom:0;max-height:92dvh;border-radius:calc(var(--rad) + 6px) calc(var(--rad) + 6px) 0 0;transform:translateY(105%);visibility:hidden}
 .sheet.open{transform:none;visibility:visible}
 @media (min-width:760px){
-  .sheet{left:auto;top:0;height:100%;max-height:none;width:min(560px,100%);border-radius:0;border-left:1px solid var(--line);transform:translateX(105%)}
+  .sheet{left:auto;top:0;height:100%;max-height:none;width:min(580px,100%);border-radius:0;border-left:var(--bw) solid var(--line);transform:translateX(105%)}
 }
-.s-head{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
-.s-head img{width:84px;height:84px;image-rendering:pixelated}
-.s-head h3{font-family:var(--font-display);font-size:24px;font-weight:800;margin:0;line-height:1.1}
-.close{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:20px;line-height:1;align-self:start}
+.s-head{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px;border-bottom:var(--bw) solid var(--line);background:var(--surface);border-radius:inherit}
+.s-head img{width:84px;height:84px;object-fit:contain}
+.s-head h3{font-family:var(--font-display);font-size:calc(1.6rem * var(--display-scale));font-weight:var(--title-weight);text-transform:var(--title-case);margin:0;line-height:1.1}
+.close{width:38px;height:38px;border-radius:50%;border:var(--bw) solid var(--line);background:var(--bg);cursor:pointer;font-size:20px;line-height:1;align-self:start}
 .s-body{overflow:auto;padding:12px 16px calc(24px + env(safe-area-inset-bottom));display:grid;gap:10px;align-content:start;overscroll-behavior:contain}
 /* Visor de carta */
-.viewer{position:fixed;inset:0;z-index:40;background:rgba(8,10,14,.92);display:none;overflow:auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.viewer{position:fixed;inset:0;z-index:40;background:rgba(8,10,14,.93);display:none;overflow:auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px)}
 .viewer.open{display:grid;place-items:center}
-.v-inner{display:grid;gap:14px;width:min(420px,100%);color:#eef1f5}
-.v-inner img{width:100%;border-radius:14px;display:block;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#222;aspect-ratio:63/88;object-fit:cover}
-.v-inner .btn{background:#1d2530;border-color:#3a4554;color:#eef1f5}
-.v-inner .btn.own[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
-.v-inner .btn.cart[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
-.v-inner .cmeta{color:#a9b3c1}
-.v-close{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;width:42px;height:42px;border-radius:50%;border:1px solid #3a4554;background:#1d2530;color:#fff;font-size:22px;cursor:pointer}
-/* Copia de seguridad */
-details.backup{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.v-inner{display:grid;gap:14px;width:min(420px,100%);color:#eef1f5;--line:#3a4554;--bg:#1d2530;--surface:#1d2530;--muted:#a9b3c1;--ink:#eef1f5}
+.v-inner > img{width:100%;border-radius:14px;display:block;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#222;aspect-ratio:63/88;object-fit:cover}
+.v-close{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;width:42px;height:42px;border-radius:50%;border:1px solid #3a4554;background:#1d2530;color:#fff;font-size:22px;cursor:pointer;z-index:1}
+details.backup{border:var(--bw) solid var(--line);border-radius:var(--rad);padding:12px 14px}
 details.backup summary{cursor:pointer;font-weight:600}
 details.backup textarea{width:100%;min-height:110px;font-family:var(--font-mono);font-size:12px;margin-top:8px}
-.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;z-index:50;transition:all .2s;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:var(--btn-rad);font-size:.93rem;z-index:50;transition:all .2s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%)}
-footer{color:var(--muted);font-size:12px;display:grid;gap:4px;max-width:80ch}
+footer{color:var(--muted);font-size:.8rem;display:grid;gap:4px;max-width:80ch}
 footer p{margin:0}
-@media (max-width:420px){.grid{grid-template-columns:repeat(3,1fr);gap:8px}.tile{padding:8px 4px 10px}.tile img,.tile .ph{width:64px;height:64px}.name{font-size:13px}.cgrid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:420px){
+  .grid{grid-template-columns:repeat(var(--cols-phone),minmax(0,1fr));gap:8px}
+  .tile{padding:8px 4px 10px}
+  .name{font-size:.87rem}
+  .cgrid{grid-template-columns:repeat(var(--col-cols),minmax(0,1fr));gap:10px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -183,10 +227,9 @@ footer p{margin:0}
       <span class="count" id="updated"></span>
     </div>
     <div class="stats" id="dex-stats"></div>
-    <div class="controls" role="search">
+    <div class="controls glass" role="search">
       <div class="row">
-        <label class="sr" for="q" hidden>Buscar</label>
-        <input type="search" id="q" placeholder="Pokémon (nombre o nº)" autocomplete="off">
+        <input type="search" id="q" placeholder="Pokémon (nombre o nº)" autocomplete="off" aria-label="Buscar Pokémon">
         <select id="sort" aria-label="Orden">
           <option value="dex">Nº Pokédex</option>
           <option value="cards">Más cartas</option>
@@ -203,7 +246,7 @@ footer p{margin:0}
     </div>
     <main class="grid" id="grid"></main>
     <footer>
-      <p>Cartas Illustration Rare, Special Illustration Rare y Trainer/Galarian Gallery de las expansiones en inglés (Black &amp; White en adelante). Datos de cartas: PokemonTCG y TCGdex. Precios de Cardmarket vía TCGdex. Nombres de Pokémon: PokéAPI.</p>
+      <p>Cartas Illustration Rare, Special Illustration Rare y Trainer/Galarian Gallery de las expansiones internacionales (Black &amp; White en adelante). Datos de cartas: PokemonTCG y TCGdex. Nombres de Pokémon: PokéAPI.</p>
     </footer>
   </section>
 
@@ -213,20 +256,14 @@ footer p{margin:0}
       <select id="col-sort" aria-label="Orden de la colección">
         <option value="added">Últimas añadidas</option>
         <option value="dex">Nº Pokédex</option>
-        <option value="price">Precio (mayor primero)</option>
+        <option value="price">Valor (mayor primero)</option>
         <option value="date">Fecha de la expansión</option>
       </select>
     </div>
     <div class="stats" id="col-stats"></div>
-    <div class="row"><input type="search" id="col-q" placeholder="Buscar en mi colección" autocomplete="off"><button class="btn" id="col-prices" type="button">Actualizar precios</button></div>
+    <div class="row"><input type="search" id="col-q" placeholder="Buscar en mi colección" autocomplete="off" aria-label="Buscar en mi colección"><button class="btn pricebit" id="col-prices" type="button">Actualizar precios</button></div>
+    <div class="chips" id="col-langs" aria-label="Filtrar por idioma"></div>
     <div class="cgrid" id="col-grid"></div>
-    <details class="backup" id="backup">
-      <summary>Copia de seguridad</summary>
-      <p class="small muted">Tus cartas se guardan en este navegador. Copia este texto para pasarlas a otro dispositivo o guardarlas; pega uno y pulsa «Importar» para recuperarlas.</p>
-      <div class="row"><button class="btn sm" type="button" id="bk-copy">Copiar copia</button><button class="btn sm" type="button" id="bk-file">Descargar archivo</button><label class="btn sm" for="bk-upload">Abrir archivo</label><input type="file" id="bk-upload" accept="application/json,.json" hidden></div>
-      <textarea id="bk-text" aria-label="Texto de la copia de seguridad" spellcheck="false"></textarea>
-      <div class="row"><button class="btn sm primary" type="button" id="bk-import">Importar</button><span class="small muted">Importar sustituye lo guardado ahora.</span></div>
-    </details>
   </section>
 
   <!-- COMPRA -->
@@ -241,17 +278,32 @@ footer p{margin:0}
     <div class="totals" id="totals"></div>
     <div class="row"><button class="btn" type="button" id="buy-prices">Actualizar precios</button><button class="btn" type="button" id="buy-all">Marcar todas</button><span class="small muted" id="buy-note"></span></div>
     <div style="display:grid;gap:10px" id="buy-list"></div>
-    <footer><p>Precio «tendencia» y «desde» de Cardmarket (cartas en inglés, cualquier estado), vía TCGdex; se actualizan una vez al día. Puedes escribir tu propio precio y se usará en el total. Desmarca una carta para dejarla fuera del total sin quitarla de la lista.</p></footer>
+    <footer><p>El precio es el de Cardmarket para la versión internacional de la carta, la que se vende en español, inglés y otros idiomas europeos (tendencia y precio más bajo, cualquier estado), vía TCGdex. Cardmarket no da precios separados por idioma. Las cartas japonesas son otro producto y no tienen precio automático: escribe el tuyo. Desmarca una carta para dejarla fuera del total sin quitarla de la lista.</p></footer>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="view" id="v-set" aria-labelledby="t-set">
+    <div class="top"><h2>Ajustes</h2><button class="btn danger sm" type="button" id="set-reset">Restablecer apariencia</button></div>
+    <div style="display:grid;gap:14px" id="set-body"></div>
+    <details class="backup glass" id="backup">
+      <summary>Copia de seguridad</summary>
+      <p class="small muted">Tu colección, tu lista y tus ajustes se guardan en este navegador. Copia este texto para pasarlos a otro dispositivo o guardarlos; pega uno y pulsa «Importar» para recuperarlos.</p>
+      <div class="row"><button class="btn sm" type="button" id="bk-copy">Copiar copia</button><button class="btn sm" type="button" id="bk-file">Descargar archivo</button><label class="btn sm" for="bk-upload">Abrir archivo</label><input type="file" id="bk-upload" accept="application/json,.json" hidden></div>
+      <textarea id="bk-text" aria-label="Texto de la copia de seguridad" spellcheck="false"></textarea>
+      <div class="row"><button class="btn sm primary" type="button" id="bk-import">Importar</button><span class="small muted">Importar sustituye lo guardado ahora.</span></div>
+    </details>
   </section>
 </div>
 
-<nav class="tabs" role="tablist" aria-label="Secciones">
+<nav class="tabs glass" role="tablist" aria-label="Secciones">
   <button class="tab" role="tab" id="t-dex" aria-controls="v-dex" aria-selected="true" data-v="dex">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h6m6 0h6"/><circle cx="12" cy="12" r="3"/></svg>Pokédex</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h6m6 0h6"/><circle cx="12" cy="12" r="3"/></svg><span class="tl">Pokédex</span></button>
   <button class="tab" role="tab" id="t-col" aria-controls="v-col" aria-selected="false" data-v="col">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/></svg>Colección<span class="n" id="n-col"></span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/></svg><span class="tl">Colección</span><span class="n" id="n-col"></span></button>
   <button class="tab" role="tab" id="t-buy" aria-controls="v-buy" aria-selected="false" data-v="buy">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>Compra<span class="n" id="n-buy"></span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span class="tl">Compra</span><span class="n" id="n-buy"></span></button>
+  <button class="tab" role="tab" id="t-set" aria-controls="v-set" aria-selected="false" data-v="set">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="tl">Ajustes</span></button>
 </nav>
 
 <div class="scrim" id="scrim"></div>
@@ -272,25 +324,86 @@ footer p{margin:0}
 
 <script>
 'use strict';
-// ---------- Estado y almacenamiento ----------
+// =====================================================================
+// Constantes
+// =====================================================================
 const KEY = 'pokedex-full-art-v1';
+const LANGS = [
+  {k:'es', label:'ES', name:'Español', intl:true},
+  {k:'en', label:'EN', name:'Inglés', intl:true},
+  {k:'ja', label:'JP', name:'Japonés', intl:false},
+  {k:'fr', label:'FR', name:'Francés', intl:true},
+  {k:'de', label:'DE', name:'Alemán', intl:true},
+  {k:'it', label:'IT', name:'Italiano', intl:true},
+  {k:'pt', label:'PT', name:'Portugués', intl:true},
+  {k:'ko', label:'KO', name:'Coreano', intl:false},
+  {k:'zh', label:'ZH', name:'Chino', intl:false},
+];
+const LBY = Object.fromEntries(LANGS.map(l=>[l.k,l]));
+const GROUPS = [
+  {k:'IR', label:'Illustration Rare'},
+  {k:'SIR', label:'Special Illustration Rare'},
+  {k:'G', label:'Trainer/Galarian Gallery'},
+];
+const GBY = Object.fromEntries(GROUPS.map(g=>[g.k,g]));
+const gcol = k => `var(--g-${k})`;
+const GENS = [[1,151,'Kanto'],[152,251,'Johto'],[252,386,'Hoenn'],[387,493,'Sinnoh'],[494,649,'Teselia'],[650,721,'Kalos'],[722,809,'Alola'],[810,905,'Galar'],[906,1025,'Paldea']];
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX'];
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+// Temas: colores base de cada uno
+const THEMES = {
+  auto:      {name:'Automático'},
+  claro:     {name:'Claro',     dark:false, bg:'#eef1f5', surface:'#ffffff', ink:'#18202b', muted:'#5d6878', line:'#d5dbe3', accent:'#d4372c'},
+  oscuro:    {name:'Oscuro',    dark:true,  bg:'#10151d', surface:'#18202b', ink:'#e8edf3', muted:'#9aa6b6', line:'#2b3644', accent:'#ff6a5c'},
+  pokeball:  {name:'Poké Ball', dark:false, bg:'#f5f1ea', surface:'#fffdf9', ink:'#1b1b1f', muted:'#6b6660', line:'#e2d9cd', accent:'#e3350d'},
+  pikachu:   {name:'Pikachu',   dark:false, bg:'#fff4c2', surface:'#fffcef', ink:'#2b2208', muted:'#76662a', line:'#efd987', accent:'#d9452b'},
+  bulbasaur: {name:'Bulbasaur', dark:false, bg:'#e6f4ec', surface:'#fbfffd', ink:'#12261d', muted:'#507062', line:'#c4e2d2', accent:'#24946a'},
+  squirtle:  {name:'Squirtle',  dark:false, bg:'#e5f1fa', surface:'#fbfdff', ink:'#0f2433', muted:'#4d6e7f', line:'#c2dcec', accent:'#2878bd'},
+  mewtwo:    {name:'Mewtwo',    dark:false, bg:'#f1eef8', surface:'#ffffff', ink:'#231d33', muted:'#6a6280', line:'#dcd5ea', accent:'#8455c4'},
+  charizard: {name:'Charizard', dark:true,  bg:'#1a110d', surface:'#271a13', ink:'#f7eadf', muted:'#c4a692', line:'#3e2a1f', accent:'#ff7a2f'},
+  gengar:    {name:'Gengar',    dark:true,  bg:'#151022', surface:'#211833', ink:'#efe8fb', muted:'#a99bc4', line:'#362a4e', accent:'#b46eff'},
+  lapras:    {name:'Lapras',    dark:true,  bg:'#0c1923', surface:'#132638', ink:'#e3f1fb', muted:'#8eafc5', line:'#203a51', accent:'#4fb3ff'},
+  umbreon:   {name:'Umbreon',   dark:true,  bg:'#0d0f12', surface:'#171a1f', ink:'#ecebe6', muted:'#9a9a92', line:'#2a2e35', accent:'#f2c230'},
+  amoled:    {name:'Negro puro',dark:true,  bg:'#000000', surface:'#0b0b0b', ink:'#f2f2f2', muted:'#8c8c8c', line:'#222222', accent:'#ff4d4d'},
+  gameboy:   {name:'Game Boy',  dark:false, bg:'#9bbc0f', surface:'#8bac0f', ink:'#0f380f', muted:'#306230', line:'#306230', accent:'#0f380f', ok:'#0f380f'},
+};
+const ACCENTS = ['#d4372c','#e3350d','#f08a24','#e8b100','#24946a','#119c8a','#2878bd','#4f5bd5','#8455c4','#c2338f','#5d6878','#0f380f'];
+const FONTS = {
+  moderna:   {name:'Moderna',    display:'"Bricolage Grotesque"', body:'"IBM Plex Sans"', css:'family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600', scale:1},
+  redondeada:{name:'Redondeada', display:'"Fredoka"', body:'"Nunito"', css:'family=Fredoka:wght@500;700&family=Nunito:wght@400;600;700', scale:1},
+  pixel:     {name:'Píxel',      display:'"Press Start 2P"', body:'"Pixelify Sans"', css:'family=Press+Start+2P&family=Pixelify+Sans:wght@400;600', scale:.62},
+  clasica:   {name:'Clásica',    display:'"Fraunces"', body:'"Source Serif 4"', css:'family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600', scale:1},
+  tecnica:   {name:'Técnica',    display:'"Chakra Petch"', body:'"Barlow"', css:'family=Chakra+Petch:wght@600;700&family=Barlow:wght@400;500;600', scale:1},
+  elegante:  {name:'Elegante',   display:'"Playfair Display"', body:'"Lato"', css:'family=Playfair+Display:wght@600;800&family=Lato:wght@400;700', scale:1},
+  comic:     {name:'Cómic',      display:'"Bangers"', body:'"Comic Neue"', css:'family=Bangers&family=Comic+Neue:wght@400;700', scale:1.1},
+  sistema:   {name:'Del sistema',display:'-apple-system,"SF Pro Display",system-ui', body:'-apple-system,system-ui', css:null, scale:1},
+};
+const RAR_DEF = {light:{IR:'#119c8a',SIR:'#c2338f',G:'#7a55d0'}, dark:{IR:'#3cc9b4',SIR:'#ef6cbf',G:'#a487f0'}};
+const DEFAULTS = {
+  theme:'auto', accent:null, bgStyle:'liso', bgInt:40, transp:0, blur:12, shadow:'soft', anim:true,
+  font:'moderna', fs:100, titleWeight:'800', upper:false,
+  rad:12, btnShape:'pill', border:1, stripe:true,
+  tile:'m', sprite:'pixel', grey:false, showNum:true, showCount:true, showBar:true, groupGen:true, defSort:'dex',
+  langs:['es','en','ja'], defLang:'es', showPrices:true, rar:{},
+  colCols:'2', colInfo:true, tabLabels:true,
+};
+
+// =====================================================================
+// Estado y almacenamiento
+// =====================================================================
 const ST = (() => {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e) {}
   s = s && typeof s === 'object' ? s : {};
-  return { owned: s.owned || {}, cart: s.cart || {}, prices: s.prices || {} };
+  const st = { owned: s.owned || {}, cart: s.cart || {}, prices: s.prices || {}, settings: Object.assign({}, DEFAULTS, s.settings || {}) };
+  // Migración: cartas guardadas antes de existir los idiomas
+  for(const id in st.owned){ const o = st.owned[id]; if(!Array.isArray(o.langs) || !o.langs.length) o.langs = [st.settings.defLang || 'es']; }
+  return st;
 })();
+const S = ST.settings;
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch(e) { toast('No se ha podido guardar en este navegador'); } }
 
-const GROUPS = [
-  {k:'IR', label:'Illustration Rare', c:'var(--g-IR)'},
-  {k:'SIR', label:'Special Illustration Rare', c:'var(--g-SIR)'},
-  {k:'G', label:'Trainer/Galarian Gallery', c:'var(--g-G)'},
-];
-const GBY = Object.fromEntries(GROUPS.map(g=>[g.k,g]));
-const GENS = [[1,151,'Kanto'],[152,251,'Johto'],[252,386,'Hoenn'],[387,493,'Sinnoh'],[494,649,'Teselia'],[650,721,'Kalos'],[722,809,'Alola'],[810,905,'Galar'],[906,1025,'Paldea']];
-const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX'];
-const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
@@ -298,19 +411,96 @@ const pad = n => '#' + String(n).padStart(4,'0');
 const fmtDate = d => { const [y,m] = d.split('-'); return `${MONTHS[+m-1]} ${y}`; };
 const eur = v => v == null || isNaN(v) ? '—' : v.toLocaleString('es-ES',{style:'currency',currency:'EUR'});
 const genOf = n => GENS.findIndex(([a,b])=>n>=a&&n<=b)+1;
-const sprite = n => `sprites/${n}.png`;
 const smallImg = u => u.replace('_hires.png','.png').replace(/\/large$/,'/small');
+const num = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+const parseEur = v => { const x = parseFloat(String(v).replace(',','.')); return isFinite(x) && x > 0 ? Math.round(x*100)/100 : null; };
+function sprite(n){
+  if(S.sprite==='art') return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${n}.png`;
+  if(S.sprite==='home') return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${n}.png`;
+  return `sprites/${n}.png`;
+}
+const spriteImg = (n, extra='') => `<img src="${sprite(n)}" alt="" loading="lazy" ${extra} onerror="if(!this.dataset.f){this.dataset.f=1;this.src='sprites/${n}.png'}">`;
 
 let DATA, CARDS, POKE;
 
-// ---------- Precios (Cardmarket vía TCGdex; respaldo pokemontcg.io) ----------
-const DAY = 864e5;
-const num = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
-async function fetchJSON(url){
-  const r = await fetch(url, {headers:{'Accept':'application/json'}});
-  if(!r.ok) throw new Error(r.status);
-  return r.json();
+// =====================================================================
+// Apariencia
+// =====================================================================
+const mql = matchMedia('(prefers-color-scheme: dark)');
+function hexRgb(h){ h=h.replace('#',''); if(h.length===3) h=h.split('').map(c=>c+c).join(''); const n=parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; }
+function rgba(h,a){ const [r,g,b]=hexRgb(h); return `rgba(${r},${g},${b},${a})`; }
+function mix(a,b,t){ const A=hexRgb(a), B=hexRgb(b); return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join(''); }
+function lum(h){ const c=hexRgb(h).map(v=>{v/=255; return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);}); return .2126*c[0]+.7152*c[1]+.0722*c[2]; }
+function palette(){ if(S.theme==='auto' || !THEMES[S.theme]) return mql.matches ? THEMES.oscuro : THEMES.claro; return THEMES[S.theme]; }
+let fontLoaded = null;
+function loadFont(key){
+  const f = FONTS[key] || FONTS.moderna;
+  if(f.css && fontLoaded !== key){ $('font-link').href = `https://fonts.googleapis.com/css2?${f.css}&display=swap`; fontLoaded = key; }
 }
+let allFontsLoaded = false;
+function loadAllFonts(){
+  if(allFontsLoaded) return; allFontsLoaded = true;
+  Object.values(FONTS).filter(f=>f.css).forEach(f=>{ const l=document.createElement('link'); l.rel='stylesheet'; l.href=`https://fonts.googleapis.com/css2?${f.css}&display=swap`; document.head.appendChild(l); });
+}
+function bgImage(p, accent){
+  const a = S.bgInt/100;
+  const lc = rgba(p.dark ? '#ffffff' : p.ink, (p.dark ? .10 : .10) * a * 1.6);
+  switch(S.bgStyle){
+    case 'degradado': return `linear-gradient(170deg, ${rgba(accent, .28*a)} 0%, ${rgba(accent, .08*a)} 35%, transparent 70%)`;
+    case 'puntos': return `radial-gradient(${lc} 1.3px, transparent 1.6px) 0 0/18px 18px`;
+    case 'cuadricula': return `linear-gradient(${lc} 1px, transparent 1px) 0 0/24px 24px, linear-gradient(90deg, ${lc} 1px, transparent 1px) 0 0/24px 24px`;
+    case 'pokeball': {
+      const col = encodeURIComponent(p.dark ? '#ffffff' : p.ink);
+      const op = (.09 * a * 1.6).toFixed(3);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><g fill='none' stroke='${col}' stroke-opacity='${op}' stroke-width='2'><circle cx='32' cy='32' r='18'/><path d='M14 32h12m12 0h12'/><circle cx='32' cy='32' r='5'/></g></svg>`;
+      return `url("data:image/svg+xml,${svg.replace(/"/g,"'")}") 0 0/64px 64px`;
+    }
+    case 'acento': return `radial-gradient(circle at 85% -10%, ${rgba(accent,.35*a)}, transparent 45%), radial-gradient(circle at -10% 110%, ${rgba(accent,.25*a)}, transparent 40%)`;
+    default: return 'none';
+  }
+}
+function applySettings(){
+  const p = palette();
+  const accent = S.accent || p.accent;
+  const R = document.documentElement, st = R.style;
+  const ok = p.ok || (p.dark ? '#4fd08a' : '#1f8a4c');
+  const set = (k,v) => st.setProperty(k, v);
+  set('--bg', p.bg); set('--surface', p.surface); set('--ink', p.ink); set('--muted', p.muted); set('--line', p.line);
+  set('--accent', accent); set('--accent-ink', lum(accent) > .45 ? '#14181f' : '#ffffff'); set('--accent-soft', mix(p.surface, accent, .15));
+  set('--ok', ok); set('--ok-soft', mix(p.surface, ok, p.dark ? .22 : .16));
+  const rd = p.dark ? RAR_DEF.dark : RAR_DEF.light;
+  GROUPS.forEach(g => set(`--g-${g.k}`, (S.rar && S.rar[g.k]) || rd[g.k]));
+  set('--surface-a', rgba(p.surface, 1 - S.transp/100));
+  set('--blur', (S.transp > 0 ? S.blur : 0) + 'px');
+  const sh = p.dark ? '0,0,0' : '24,32,43';
+  set('--shadow', S.shadow==='none' ? 'none' : S.shadow==='strong' ? `0 2px 4px rgba(${sh},.12),0 10px 28px rgba(${sh},.18)` : `0 1px 2px rgba(${sh},.06),0 4px 14px rgba(${sh},.07)`);
+  set('--rad', S.rad + 'px'); set('--rad-s', Math.round(S.rad*.75) + 'px');
+  set('--btn-rad', S.btnShape==='pill' ? '999px' : S.btnShape==='round' ? Math.max(4, Math.round(S.rad*.7)) + 'px' : '2px');
+  set('--bw', S.border + 'px'); set('--stripe', S.stripe ? '5px' : S.border + 'px');
+  set('--fs', S.fs/100);
+  const f = FONTS[S.font] || FONTS.moderna; loadFont(S.font);
+  set('--font-display', `${f.display},"Segoe UI",system-ui,sans-serif`);
+  set('--font-body', `${f.body},-apple-system,"Segoe UI",system-ui,sans-serif`);
+  set('--display-scale', f.scale); set('--title-weight', S.titleWeight); set('--title-case', S.upper ? 'uppercase' : 'none');
+  const T = {s:['104px','56px',4], m:['140px','80px',3], l:['184px','112px',2]}[S.tile] || ['140px','80px',3];
+  set('--tile-min', T[0]); set('--sprite', T[1]); set('--cols-phone', T[2]);
+  set('--col-cols', S.colCols);
+  st.colorScheme = p.dark ? 'dark' : 'light';
+  document.body.style.background = `${bgImage(p, accent)}, ${p.bg}`.replace(/^none, /,'');
+  document.body.style.backgroundAttachment = 'fixed';
+  const ds = R.dataset;
+  ds.anim = S.anim ? 'on' : 'off'; ds.grey = S.grey ? 'on' : 'off'; ds.sprite = S.sprite;
+  ds.shownum = S.showNum ? 'on' : 'off'; ds.showcount = S.showCount ? 'on' : 'off'; ds.showbar = S.showBar ? 'on' : 'off';
+  ds.prices = S.showPrices ? 'on' : 'off'; ds.colinfo = S.colInfo ? 'on' : 'off'; ds.tablabels = S.tabLabels ? 'on' : 'off';
+  $('meta-theme').setAttribute('content', p.bg);
+}
+mql.addEventListener('change', ()=>{ if(S.theme==='auto'){ applySettings(); if(view==='set') renderSettings(); } });
+
+// =====================================================================
+// Precios (Cardmarket vía TCGdex; respaldo pokemontcg.io)
+// =====================================================================
+const DAY = 864e5;
+async function fetchJSON(url){ const r = await fetch(url, {headers:{'Accept':'application/json'}}); if(!r.ok) throw new Error(r.status); return r.json(); }
 async function fetchPrice(card){
   if(card.t){
     try{
@@ -318,7 +508,7 @@ async function fetchPrice(card){
       const cm = j && j.pricing && j.pricing.cardmarket;
       if(cm){
         let p = {trend:num(cm.trend), low:num(cm.low), avg:num(cm.avg), avg30:num(cm.avg30), avg7:num(cm.avg7)};
-        if(!p.trend && !p.low && !p.avg){ p = {trend:num(cm['trend-holo']), low:num(cm['low-holo']), avg:num(cm['avg-holo']), avg30:num(cm['avg30-holo']), avg7:num(cm['avg7-holo'])}; }
+        if(!p.trend && !p.low && !p.avg) p = {trend:num(cm['trend-holo']), low:num(cm['low-holo']), avg:num(cm['avg-holo']), avg30:num(cm['avg30-holo']), avg7:num(cm['avg7-holo'])};
         if(p.trend || p.low || p.avg) return {...p, src:'tcgdex', t:Date.now()};
       }
     }catch(e){}
@@ -355,85 +545,117 @@ function priceHTML(id){
   const p = ST.prices[id];
   if(!p) return '<span class="na">Cargando precio…</span>';
   if(p.none) return '<span class="na">Sin precio en Cardmarket</span>';
-  return `<span>Tendencia <b>${eur(p.trend ?? p.avg30 ?? p.avg)}</b></span><span>Desde ${eur(p.low)}</span>${p.avg30?`<span class="muted">Media 30 d ${eur(p.avg30)}</span>`:''}`;
+  return `<span>Tendencia <b>${eur(p.trend ?? p.avg30 ?? p.avg)}</b></span><span>Desde ${eur(p.low)}</span>${p.avg30?`<span class="muted">Media 30 d ${eur(p.avg30)}</span>`:''}<span class="muted">versión ES/EN</span>`;
 }
 function loadPrices(ids, force, after){
+  if(!S.showPrices && !force){ after && after(); return Promise.resolve(); }
   const list = ids.map(id=>CARDS[id]).filter(Boolean);
   let left = list.length;
   if(!left){ after && after(); return Promise.resolve(); }
   return Promise.all(list.map(c => getPrice(c, force).then(()=>{
-    document.querySelectorAll(`[data-price="${CSS.escape(c.id)}"]`).forEach(el=>el.innerHTML = priceHTML(c.id));
+    document.querySelectorAll(`.price[data-price="${CSS.escape(c.id)}"]`).forEach(el=>el.innerHTML = priceHTML(c.id));
     if(--left === 0 && after) after();
   })));
 }
 
-// ---------- Acciones ----------
-function setOwned(id, on){
-  if(on){ ST.owned[id] = {t:Date.now()}; if(ST.cart[id]) delete ST.cart[id]; }
-  else delete ST.owned[id];
-  save(); refreshAll();
+// =====================================================================
+// Colección: idiomas y valor
+// =====================================================================
+const isOwned = id => !!(ST.owned[id] && ST.owned[id].langs && ST.owned[id].langs.length);
+const ownedLangs = id => isOwned(id) ? ST.owned[id].langs : [];
+function toggleLang(id, lang){
+  let o = ST.owned[id];
+  if(!o){ o = ST.owned[id] = {t:Date.now(), langs:[]}; }
+  const i = o.langs.indexOf(lang);
+  if(i >= 0) o.langs.splice(i,1); else { o.langs.push(lang); o.langs.sort((a,b)=>LANGS.findIndex(l=>l.k===a)-LANGS.findIndex(l=>l.k===b)); if(o.langs.length===1) o.t = Date.now(); }
+  if(!o.langs.length) delete ST.owned[id];
+  else if(ST.cart[id]) delete ST.cart[id];
+  save();
+  return i < 0;
 }
+function copyValue(id, lang){
+  const o = ST.owned[id]; const man = o && o.vals && num(o.vals[lang]);
+  if(man != null) return man;
+  return LBY[lang] && LBY[lang].intl ? refPrice(id) : null;
+}
+function ownedValue(id){ let v = 0, missing = 0; ownedLangs(id).forEach(l=>{ const x = copyValue(id,l); if(x==null) missing++; else v += x; }); return {v, missing}; }
+function visibleLangs(id){
+  const set = new Set(S.langs && S.langs.length ? S.langs : ['es','en','ja']);
+  ownedLangs(id).forEach(l=>set.add(l));
+  return LANGS.filter(l=>set.has(l.k));
+}
+function langChips(id){
+  const owned = ownedLangs(id);
+  return `<div class="langs"><span class="lbl">La tengo en</span>${visibleLangs(id).map(l=>`<button class="lang" type="button" data-own-lang="${esc(id)}|${l.k}" aria-pressed="${owned.includes(l.k)}" title="${l.name}"><span class="ck">✓</span>${l.label}</button>`).join('')}</div>`;
+}
+
+// =====================================================================
+// Carrito
+// =====================================================================
 function setCart(id, on){
-  if(on){ ST.cart[id] = {t:Date.now(), sel:true}; getPrice(CARDS[id]).then(()=>{ if(view==='buy') renderBuy(); }); }
+  if(on){ ST.cart[id] = {t:Date.now(), sel:true, lang:'any'}; getPrice(CARDS[id]).then(()=>{ if(view==='buy') renderBuy(); }); }
   else delete ST.cart[id];
-  save(); refreshAll();
+  save();
 }
-function syncButtons(id){
-  document.querySelectorAll(`[data-own="${CSS.escape(id)}"]`).forEach(b=>{ const on=!!ST.owned[id]; b.setAttribute('aria-pressed',on); b.textContent = on ? '✓ La tengo' : 'La tengo'; });
-  document.querySelectorAll(`[data-cart="${CSS.escape(id)}"]`).forEach(b=>{ const on=!!ST.cart[id]; b.setAttribute('aria-pressed',on); b.textContent = on ? 'En la lista' : 'Quiero comprarla'; });
-}
+function cartLangPriceless(id){ const l = ST.cart[id] && ST.cart[id].lang; return l && l!=='any' && LBY[l] && !LBY[l].intl; }
+function usedPrice(id){ const it = ST.cart[id]; const m = it && num(it.manual); if(m != null) return m; return cartLangPriceless(id) ? null : refPrice(id); }
+
+// =====================================================================
+// Eventos globales
+// =====================================================================
 document.addEventListener('click', e=>{
-  const own = e.target.closest('[data-own]');
-  if(own){ const id = own.dataset.own; const on = !ST.owned[id]; setOwned(id, on); syncButtons(id); toast(on ? 'Añadida a tu colección' : 'Quitada de tu colección'); return; }
+  const ol = e.target.closest('[data-own-lang]');
+  if(ol){ const [id, lang] = ol.dataset.ownLang.split('|'); const on = toggleLang(id, lang); refreshAll(); toast(on ? `Añadida en ${LBY[lang].name.toLowerCase()}` : `Quitada (${LBY[lang].name.toLowerCase()})`); return; }
   const cart = e.target.closest('[data-cart]');
-  if(cart){ const id = cart.dataset.cart; const on = !ST.cart[id]; setCart(id, on); syncButtons(id); toast(on ? 'Añadida a la lista de la compra' : 'Quitada de la lista'); return; }
+  if(cart){ const id = cart.dataset.cart; const on = !ST.cart[id]; setCart(id, on); refreshAll(); toast(on ? 'Añadida a la lista de la compra' : 'Quitada de la lista'); return; }
   const z = e.target.closest('[data-zoom]');
   if(z){ openViewer(z.dataset.zoom); return; }
 });
 let toastT;
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 
-// ---------- Helpers de carta ----------
-function cardTitle(c){ return c.ne || c.n; }
-function setName(c){ return c.se || c.s; }
-function cmURL(c){ return 'https://www.cardmarket.com/es/Pokemon/Products/Search?searchString=' + encodeURIComponent(c.n); }
-function pokeNames(c){ return c.dex.map(n=>POKE.get(n)?.es || DATA.names[n]?.[0]).filter(Boolean).join(' & '); }
-function imgTag(c, cls){
-  return `<img src="${esc(smallImg(c.img))}" data-full="${esc(c.img)}" alt="${esc(c.n)}" loading="lazy" decoding="async" onerror="if(this.src!==this.dataset.full){this.src=this.dataset.full}">`;
-}
-function pill(c){ const g=GBY[c.g]; return `<span class="pill"><span class="dot" style="background:${g.c}"></span>${esc(g.label)}</span>`; }
+// =====================================================================
+// Helpers de carta
+// =====================================================================
+const cardTitle = c => c.ne || c.n;
+const setName = c => c.se || c.s;
+const cmURL = c => 'https://www.cardmarket.com/es/Pokemon/Products/Search?searchString=' + encodeURIComponent(c.n);
+const pokeNames = c => c.dex.map(n=>POKE.get(n)?.es || DATA.names[n]?.[0]).filter(Boolean).join(' & ');
+const imgTag = c => `<img src="${esc(smallImg(c.img))}" data-full="${esc(c.img)}" alt="${esc(c.n)}" loading="lazy" decoding="async" onerror="if(this.src!==this.dataset.full){this.src=this.dataset.full}">`;
+const pill = c => `<span class="pill"><span class="dot" style="background:${gcol(c.g)}"></span>${esc(GBY[c.g].label)}</span>`;
 function cardRow(c, opts={}){
-  const g = GBY[c.g];
-  return `<article class="crow" style="border-left-color:${g.c}">
+  return `<article class="crow" style="border-left-color:${gcol(c.g)}">
     <button class="thumb" type="button" data-zoom="${esc(c.id)}" aria-label="Ver ${esc(c.n)} en grande">${imgTag(c)}</button>
     <div class="cinfo">
       <div class="ctop"><span class="cname">${esc(cardTitle(c))}</span><span class="cnum">${esc(c.num)}/${c.tot}</span></div>
       <div class="cmeta">${esc(setName(c))} · ${fmtDate(c.d)}</div>
       <div class="cmeta">${pill(c)}${c.a?` · ${esc(c.a)}`:''}</div>
       <div class="price" data-price="${esc(c.id)}">${priceHTML(c.id)}</div>
+      ${opts.noLangs ? '' : langChips(c.id)}
       ${opts.extra || ''}
       <div class="cact">
-        <button class="btn sm own" type="button" data-own="${esc(c.id)}" aria-pressed="${!!ST.owned[c.id]}">${ST.owned[c.id]?'✓ La tengo':'La tengo'}</button>
-        ${opts.noCart ? '' : `<button class="btn sm cart" type="button" data-cart="${esc(c.id)}" aria-pressed="${!!ST.cart[c.id]}">${ST.cart[c.id]?'En la lista':'Quiero comprarla'}</button>`}
+        ${opts.before || ''}
+        <button class="btn sm cart" type="button" data-cart="${esc(c.id)}" aria-pressed="${!!ST.cart[c.id]}">${ST.cart[c.id]?(opts.inCart?'Quitar de la lista':'En la lista'):'Quiero comprarla'}</button>
         <a class="btn sm" href="${cmURL(c)}" target="_blank" rel="noopener">Cardmarket</a>
       </div>
     </div>
   </article>`;
 }
 
-// ---------- Pokédex ----------
-const state = {q:'', sort:'dex', gens:new Set(), groups:new Set(), status:'all', missing:false};
-function ownedCount(p){ return p.c.filter(id=>ST.owned[id]).length; }
-function cartCount(p){ return p.c.filter(id=>ST.cart[id]).length; }
+// =====================================================================
+// Pokédex
+// =====================================================================
+const state = {q:'', sort:S.defSort, gens:new Set(), groups:new Set(), status:'all', missing:false};
+const ownedCount = p => p.c.filter(isOwned).length;
 function renderDexStats(){
-  const got = DATA.pokemon.filter(p=>ownedCount(p)>0).length;
-  const total = DATA.pokemon.length;
-  const nOwned = Object.keys(ST.owned).filter(id=>CARDS[id]).length;
+  const got = DATA.pokemon.filter(p=>ownedCount(p)>0).length, total = DATA.pokemon.length;
+  const nOwned = DATA.cards.filter(c=>isOwned(c.id)).length;
   $('dex-stats').innerHTML = `
-    <div class="stat"><b>${got} / ${total}</b><span>Pokémon conseguidos</span><div class="progress"><i style="width:${(got/total*100).toFixed(1)}%"></i></div></div>
-    <div class="stat"><b>${nOwned} / ${DATA.cards.length}</b><span>cartas en tu colección</span><div class="progress"><i style="width:${(nOwned/DATA.cards.length*100).toFixed(1)}%;background:var(--ok)"></i></div></div>`;
+    <div class="stat glass"><b>${got} / ${total}</b><span>Pokémon conseguidos</span><div class="progress"><i style="width:${(got/total*100).toFixed(1)}%"></i></div></div>
+    <div class="stat glass"><b>${nOwned} / ${DATA.cards.length}</b><span>cartas en tu colección</span><div class="progress"><i style="width:${(nOwned/DATA.cards.length*100).toFixed(1)}%;background:var(--ok)"></i></div></div>`;
 }
 function mkChips(el, items, onClick){
+  el.innerHTML = '';
   items.forEach(it=>{
     const b = document.createElement('button');
     b.className='chip'; b.type='button'; b.setAttribute('aria-pressed', it.on ? 'true':'false');
@@ -442,7 +664,7 @@ function mkChips(el, items, onClick){
     el.appendChild(b);
   });
 }
-function filteredIds(p){ return state.groups.size ? p.c.filter(id=>state.groups.has(CARDS[id].g)) : p.c; }
+const filteredIds = p => state.groups.size ? p.c.filter(id=>state.groups.has(CARDS[id].g)) : p.c;
 function matchesQ(n, es, en){
   const q = norm(state.q.trim()); if(!q) return true;
   if(/^#?\d+$/.test(q)) return String(n) === q.replace('#','').replace(/^0+/,'');
@@ -450,7 +672,7 @@ function matchesQ(n, es, en){
 }
 function barHTML(ids){
   const cnt={}; ids.forEach(id=>{const g=CARDS[id].g; cnt[g]=(cnt[g]||0)+1;});
-  return '<div class="bar" aria-hidden="true">'+GROUPS.filter(g=>cnt[g.k]).map(g=>`<i style="flex:${cnt[g.k]};background:${g.c}"></i>`).join('')+'</div>';
+  return '<div class="bar" aria-hidden="true">'+GROUPS.filter(g=>cnt[g.k]).map(g=>`<i style="flex:${cnt[g.k]};background:${gcol(g.k)}"></i>`).join('')+'</div>';
 }
 function renderDex(){
   renderDexStats();
@@ -464,7 +686,7 @@ function renderDex(){
     if(p){
       const ids = filteredIds(p);
       if(ids.length){
-        const own = ids.filter(id=>ST.owned[id]).length;
+        const own = ids.filter(isOwned).length;
         if(state.status==='got' && !own) continue;
         if(state.status==='missing' && own) continue;
         list.push({n, gen, es:names[0], ids, own, cart:ids.filter(id=>ST.cart[id]).length, has:true});
@@ -481,16 +703,16 @@ function renderDex(){
   if(!list.length){ grid.innerHTML = '<p class="empty" style="grid-column:1/-1">Ningún Pokémon coincide con estos filtros.</p>'; return; }
   let h='', last=0;
   list.forEach(x=>{
-    if(state.sort==='dex' && x.gen!==last){
+    if(S.groupGen && state.sort==='dex' && x.gen!==last){
       last=x.gen; const g=GENS[x.gen-1];
       const inGen = DATA.pokemon.filter(p=>p.gen===x.gen);
       const gotGen = inGen.filter(p=>ownedCount(p)>0).length;
       h += `<h3 class="gen-h">Gen ${ROMAN[x.gen-1]} · ${g[2]} <small>${inGen.length} de ${g[1]-g[0]+1} con carta ilustrada · ${gotGen} conseguidos</small></h3>`;
     }
     if(x.has){
-      h += `<button class="tile${x.own?' got':''}" type="button" data-n="${x.n}" aria-label="${esc(x.es)}: ${x.ids.length} cartas, ${x.own} en tu colección">
-        ${x.own?`<span class="badge">${x.own}/${x.ids.length}</span>`:''}${x.cart?`<span class="badge cartb">${x.cart} 🛒</span>`:''}
-        <img src="${sprite(x.n)}" alt="" loading="lazy"><span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span>
+      h += `<button class="tile glass${x.own?' got':''}" type="button" data-n="${x.n}" aria-label="${esc(x.es)}: ${x.ids.length} cartas, ${x.own} en tu colección">
+        ${x.own?`<span class="badge">${x.own}/${x.ids.length}</span>`:''}${x.cart?`<span class="badge cartb">${x.cart} en lista</span>`:''}
+        ${spriteImg(x.n)}<span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span>
         <span class="ncards">${x.ids.length} ${x.ids.length===1?'carta':'cartas'}</span>${barHTML(x.ids)}</button>`;
     } else {
       h += `<div class="tile none"><div class="ph">–</div><span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span><span class="ncards">sin carta</span></div>`;
@@ -500,13 +722,15 @@ function renderDex(){
 }
 $('grid').addEventListener('click', e=>{ const t=e.target.closest('.tile[data-n]'); if(t) openSheet(+t.dataset.n); });
 
-// ---------- Hoja de Pokémon ----------
+// =====================================================================
+// Hoja de Pokémon
+// =====================================================================
 const sheet=$('sheet'), scrim=$('scrim');
 let sheetN = null, lastFocus = null;
 function openSheet(n){
   const p = POKE.get(n); if(!p) return;
   sheetN = n; lastFocus = document.activeElement;
-  $('s-img').innerHTML = `<img src="${sprite(n)}" alt="">`;
+  $('s-img').innerHTML = spriteImg(n);
   $('s-no').textContent = pad(n) + ' · Gen ' + ROMAN[p.gen-1];
   $('s-title').textContent = p.es;
   renderSheetBody();
@@ -516,83 +740,113 @@ function openSheet(n){
 }
 function renderSheetBody(){
   const p = POKE.get(sheetN); if(!p) return;
-  const own = ownedCount(p);
-  $('s-sub').textContent = (p.en!==p.es ? p.en + ' · ' : '') + `${own} de ${p.c.length} cartas en tu colección`;
-  const cards = p.c.map(id=>CARDS[id]).sort((a,b)=>b.d.localeCompare(a.d));
-  $('s-body').innerHTML = cards.map(c=>cardRow(c)).join('');
+  $('s-sub').textContent = (p.en!==p.es ? p.en + ' · ' : '') + `${ownedCount(p)} de ${p.c.length} cartas en tu colección`;
+  $('s-body').innerHTML = p.c.map(id=>CARDS[id]).sort((a,b)=>b.d.localeCompare(a.d)).map(c=>cardRow(c)).join('');
 }
 function closeSheet(){ sheet.classList.remove('open'); scrim.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); sheetN=null; if(lastFocus) lastFocus.focus({preventScroll:true}); }
 $('s-close').addEventListener('click', closeSheet);
 scrim.addEventListener('click', closeSheet);
 
-// ---------- Visor de carta ----------
+// =====================================================================
+// Visor de carta
+// =====================================================================
 const viewer = $('viewer');
 let viewerId = null, viewerFocus = null;
-function openViewer(id){
-  const c = CARDS[id]; if(!c) return;
-  viewerId = id; viewerFocus = document.activeElement;
+function renderViewer(){
+  const c = CARDS[viewerId]; if(!c) return;
+  const asian = ownedLangs(c.id).filter(l=>!LBY[l].intl);
+  const vals = (ST.owned[c.id] && ST.owned[c.id].vals) || {};
   $('v-inner').innerHTML = `
     <img src="${esc(c.img)}" alt="${esc(c.n)}">
-    <div style="display:grid;gap:4px">
-      <div class="ctop"><span class="cname" style="font-size:18px">${esc(cardTitle(c))}</span><span class="cnum" style="color:#a9b3c1">${esc(c.num)}/${c.tot}</span></div>
+    <div style="display:grid;gap:6px">
+      <div class="ctop"><span class="cname" style="font-size:1.2rem">${esc(cardTitle(c))}</span><span class="cnum">${esc(c.num)}/${c.tot}</span></div>
       <div class="cmeta">${esc(pokeNames(c))} · ${c.dex.map(pad).join(' ')}</div>
       <div class="cmeta">${esc(setName(c))}${c.se?` (${esc(c.s)})`:''} · ${fmtDate(c.d)}</div>
       <div class="cmeta">${esc(GBY[c.g].label)}${c.a?` · Ilustración: ${esc(c.a)}`:''}</div>
       <div class="price" data-price="${esc(c.id)}">${priceHTML(c.id)}</div>
+      ${langChips(c.id)}
+      ${asian.map(l=>`<label class="manual">Valor de tu copia en ${LBY[l].name.toLowerCase()} <input type="text" inputmode="decimal" autocomplete="off" data-val="${esc(c.id)}|${l}" value="${num(vals[l])!=null?vals[l]:''}" placeholder="€"> €</label>`).join('')}
       <div class="cact">
-        <button class="btn sm own" type="button" data-own="${esc(c.id)}" aria-pressed="${!!ST.owned[c.id]}">${ST.owned[c.id]?'✓ La tengo':'La tengo'}</button>
         <button class="btn sm cart" type="button" data-cart="${esc(c.id)}" aria-pressed="${!!ST.cart[c.id]}">${ST.cart[c.id]?'En la lista':'Quiero comprarla'}</button>
         <a class="btn sm" href="${cmURL(c)}" target="_blank" rel="noopener">Cardmarket</a>
       </div>
     </div>`;
+}
+function openViewer(id){
+  if(!CARDS[id]) return;
+  viewerId = id; viewerFocus = document.activeElement;
+  renderViewer();
   viewer.classList.add('open'); $('v-close').focus({preventScroll:true});
   loadPrices([id]);
 }
 function closeViewer(){ viewer.classList.remove('open'); viewerId=null; if(viewerFocus) viewerFocus.focus({preventScroll:true}); }
 $('v-close').addEventListener('click', closeViewer);
 viewer.addEventListener('click', e=>{ if(e.target===viewer) closeViewer(); });
+viewer.addEventListener('input', e=>{
+  const v = e.target.closest('[data-val]'); if(!v) return;
+  const [id, l] = v.dataset.val.split('|'); const o = ST.owned[id]; if(!o) return;
+  o.vals = o.vals || {}; o.vals[l] = parseEur(v.value); save();
+  if(view==='col') renderColStats();
+});
 document.addEventListener('keydown', e=>{ if(e.key!=='Escape') return; if(viewer.classList.contains('open')) closeViewer(); else if(sheet.classList.contains('open')) closeSheet(); });
 
-// ---------- Colección ----------
-function ownedCards(){ return Object.keys(ST.owned).filter(id=>CARDS[id]).map(id=>CARDS[id]); }
+// =====================================================================
+// Colección
+// =====================================================================
+let colLang = 'all';
+const ownedCards = () => Object.keys(ST.owned).filter(id=>CARDS[id] && isOwned(id)).map(id=>CARDS[id]);
+function renderColStats(){
+  const all = ownedCards();
+  const copies = all.reduce((s,c)=>s+ownedLangs(c.id).length,0);
+  const pokes = new Set(all.flatMap(c=>c.dex)).size;
+  let value = 0, missing = 0; all.forEach(c=>{ const r = ownedValue(c.id); value += r.v; missing += r.missing; });
+  const byLang = {}; all.forEach(c=>ownedLangs(c.id).forEach(l=>byLang[l]=(byLang[l]||0)+1));
+  $('col-stats').innerHTML = `
+    <div class="stat glass"><b>${all.length}</b><span>cartas${copies>all.length?` · ${copies} copias`:''}</span></div>
+    <div class="stat glass"><b>${pokes}</b><span>Pokémon distintos</span></div>
+    <div class="stat glass pricebit"><b>${eur(value)}</b><span>valor estimado${missing?` · ${missing} ${missing===1?'copia':'copias'} sin precio`:''}</span></div>
+    <div class="stat glass"><b style="font-size:1.1rem;display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 4px">${LANGS.filter(l=>byLang[l.k]).map(l=>`<span class="ltag">${l.label} ${byLang[l.k]}</span>`).join('') || '—'}</b><span>copias por idioma</span></div>`;
+  return byLang;
+}
 function renderCol(){
   const all = ownedCards();
-  const pokes = new Set(all.flatMap(c=>c.dex)).size;
-  const priced = all.map(c=>refPrice(c.id)).filter(v=>v!=null);
-  const value = priced.reduce((s,v)=>s+v,0);
-  $('col-stats').innerHTML = `
-    <div class="stat"><b>${all.length}</b><span>cartas</span></div>
-    <div class="stat"><b>${pokes}</b><span>Pokémon distintos</span></div>
-    <div class="stat"><b>${eur(value)}</b><span>valor estimado${priced.length<all.length?` (${priced.length} de ${all.length} con precio)`:''}</span></div>`;
+  const byLang = renderColStats();
+  const used = LANGS.filter(l=>byLang[l.k]);
+  if(colLang!=='all' && !byLang[colLang]) colLang = 'all';
+  mkChips($('col-langs'), used.length>1 ? [{v:'all',label:'Todos los idiomas',on:colLang==='all'}, ...used.map(l=>({v:l.k,label:l.name,on:colLang===l.k}))] : [], it=>{ colLang = it.v; renderCol(); });
   const q = norm($('col-q').value.trim());
-  let list = all.filter(c=>!q || norm(cardTitle(c)+' '+c.n+' '+pokeNames(c)+' '+setName(c)+' '+c.s).includes(q));
+  let list = all.filter(c=>(colLang==='all' || ownedLangs(c.id).includes(colLang)) && (!q || norm(cardTitle(c)+' '+c.n+' '+pokeNames(c)+' '+setName(c)+' '+c.s+' '+(c.a||'')).includes(q)));
   const s = $('col-sort').value;
   if(s==='added') list.sort((a,b)=>ST.owned[b.id].t-ST.owned[a.id].t);
   else if(s==='dex') list.sort((a,b)=>a.dex[0]-b.dex[0]||a.d.localeCompare(b.d));
-  else if(s==='price') list.sort((a,b)=>(refPrice(b.id)??-1)-(refPrice(a.id)??-1));
+  else if(s==='price') list.sort((a,b)=>ownedValue(b.id).v-ownedValue(a.id).v);
   else list.sort((a,b)=>b.d.localeCompare(a.d));
   const grid = $('col-grid');
-  if(!all.length){ grid.innerHTML = `<p class="empty" style="grid-column:1/-1">Aún no has marcado ninguna carta. En la Pokédex, abre un Pokémon y pulsa «La tengo» en sus cartas.</p>`; return; }
-  if(!list.length){ grid.innerHTML = `<p class="empty" style="grid-column:1/-1">Ninguna carta de tu colección coincide con la búsqueda.</p>`; return; }
-  grid.innerHTML = list.map(c=>`<button class="ccard" type="button" data-zoom="${esc(c.id)}">
-      <div class="img">${imgTag(c)}</div>
+  if(!all.length){ grid.innerHTML = `<p class="empty" style="grid-column:1/-1">Aún no has marcado ninguna carta. En la Pokédex, abre un Pokémon y elige en qué idioma tienes cada carta.</p>`; return; }
+  if(!list.length){ grid.innerHTML = `<p class="empty" style="grid-column:1/-1">Ninguna carta de tu colección coincide.</p>`; return; }
+  grid.innerHTML = list.map(c=>{
+    const r = ownedValue(c.id);
+    return `<button class="ccard" type="button" data-zoom="${esc(c.id)}">
+      <div class="img">${imgTag(c)}<div class="ltags">${ownedLangs(c.id).map(l=>`<span class="ltag">${LBY[l].label}</span>`).join('')}</div></div>
       <div class="t">${esc(cardTitle(c))}</div>
-      <div class="m">${esc(setName(c))} · ${esc(c.num)}/${c.tot}<br><span class="dot" style="display:inline-block;background:${GBY[c.g].c};margin-right:4px"></span>${esc(GBY[c.g].label)}${c.a?` · ${esc(c.a)}`:''}</div>
-      <div class="m" data-price="${esc(c.id)}">${ST.prices[c.id] ? (refPrice(c.id)!=null ? 'Tendencia ' + eur(refPrice(c.id)) : 'Sin precio') : ''}</div>
-    </button>`).join('');
+      <div class="m">${esc(setName(c))} · ${esc(c.num)}/${c.tot}<br><span class="dot" style="background:${gcol(c.g)};margin-right:4px"></span>${esc(GBY[c.g].label)}${c.a?` · ${esc(c.a)}`:''}</div>
+      <div class="m pricebit">${r.v ? 'Valor ' + eur(r.v) : (ST.prices[c.id] ? 'Sin precio' : '')}${r.v && r.missing ? ' + sin precio' : ''}</div>
+    </button>`;
+  }).join('');
 }
 $('col-q').addEventListener('input', renderCol);
 $('col-sort').addEventListener('change', renderCol);
 $('col-prices').addEventListener('click', ()=>{ toast('Actualizando precios…'); loadPrices(ownedCards().map(c=>c.id), true, ()=>{ renderCol(); toast('Precios actualizados'); }); });
 
-// ---------- Compra ----------
-function cartCards(){ return Object.keys(ST.cart).filter(id=>CARDS[id]).map(id=>CARDS[id]); }
-function usedPrice(id){ const m = ST.cart[id] && ST.cart[id].manual; return num(m) ?? refPrice(id); }
+// =====================================================================
+// Compra
+// =====================================================================
+const cartCards = () => Object.keys(ST.cart).filter(id=>CARDS[id]).map(id=>CARDS[id]);
 function renderTotals(){
   const all = cartCards();
   const sel = all.filter(c=>ST.cart[c.id].sel !== false);
   const total = sel.reduce((s,c)=>s+(usedPrice(c.id)??0),0);
-  const low = sel.reduce((s,c)=>{ const m=num(ST.cart[c.id].manual); const p=ST.prices[c.id]; return s+(m ?? (p&&!p.none?(p.low??p.trend??0):0)); },0);
+  const low = sel.reduce((s,c)=>{ const m=num(ST.cart[c.id].manual); if(m!=null) return s+m; if(cartLangPriceless(c.id)) return s; const p=ST.prices[c.id]; return s+(p&&!p.none?(p.low??p.trend??0):0); },0);
   const noPrice = sel.filter(c=>usedPrice(c.id)==null).length;
   $('totals').innerHTML = `
     <div><div class="lbl">Total seleccionado</div><div class="big">${eur(total)}</div></div>
@@ -610,33 +864,166 @@ function renderBuy(){
   $('buy-note').textContent = times.length ? 'Precios del ' + new Date(Math.min(...times)).toLocaleDateString('es-ES',{day:'numeric',month:'short'}) : '';
   const el = $('buy-list');
   if(!all.length){ el.innerHTML = `<p class="empty">Tu lista está vacía. En la Pokédex, abre un Pokémon y pulsa «Quiero comprarla» en las cartas que te interesen.</p>`; return; }
+  const langOpts = (cur) => `<option value="any"${cur==='any'?' selected':''}>Cualquiera</option>` + LANGS.filter(l=>S.langs.includes(l.k) || l.k===cur).map(l=>`<option value="${l.k}"${cur===l.k?' selected':''}>${l.name}</option>`).join('');
   el.innerHTML = all.map(c=>{
-    const it = ST.cart[c.id];
-    const extra = `<div class="row" style="gap:12px">
-        <label class="manual"><input type="checkbox" class="sel-check" data-sel="${esc(c.id)}" ${it.sel!==false?'checked':''}> Contar en el total</label>
-        <label class="manual">Mi precio <input type="text" inputmode="decimal" autocomplete="off" placeholder="${refPrice(c.id)!=null?refPrice(c.id).toFixed(2):'€'}" value="${num(it.manual)!=null?it.manual:''}" data-manual="${esc(c.id)}" aria-label="Mi precio para ${esc(c.n)}"> €</label>
-      </div>`;
-    return cardRow(c, {extra}).replace('class="cact">', `class="cact"><button class="btn sm" type="button" data-bought="${esc(c.id)}">Comprada</button>`);
+    const it = ST.cart[c.id]; const lang = it.lang || 'any';
+    const rp = cartLangPriceless(c.id) ? null : refPrice(c.id);
+    const extra = `<div class="row" style="gap:10px 14px">
+        <label class="manual"><input type="checkbox" class="sel-check" data-sel="${esc(c.id)}" ${it.sel!==false?'checked':''}> En el total</label>
+        <label class="manual">Idioma <select data-clang="${esc(c.id)}" aria-label="Idioma que quieres">${langOpts(lang)}</select></label>
+        <label class="manual">Mi precio <input type="text" inputmode="decimal" autocomplete="off" placeholder="${rp!=null?rp.toFixed(2).replace('.',','):'€'}" value="${num(it.manual)!=null?String(it.manual).replace('.',','):''}" data-manual="${esc(c.id)}" aria-label="Mi precio para ${esc(c.n)}"> €</label>
+      </div>${cartLangPriceless(c.id)?`<div class="small muted">Las cartas en ${LBY[lang].name.toLowerCase()} no tienen precio automático: escribe el tuyo.</div>`:''}`;
+    return cardRow(c, {extra, noLangs:true, inCart:true, before:`<button class="btn sm primary" type="button" data-bought="${esc(c.id)}">Comprada</button>`});
   }).join('');
 }
 $('buy-list').addEventListener('change', e=>{
   const s = e.target.closest('[data-sel]');
-  if(s){ ST.cart[s.dataset.sel].sel = s.checked; save(); renderTotals(); }
+  if(s){ ST.cart[s.dataset.sel].sel = s.checked; save(); renderTotals(); return; }
+  const l = e.target.closest('[data-clang]');
+  if(l){ ST.cart[l.dataset.clang].lang = l.value; save(); renderBuy(); }
 });
 $('buy-list').addEventListener('input', e=>{
   const m = e.target.closest('[data-manual]');
-  if(m){ const v = parseFloat(m.value.replace(',','.')); ST.cart[m.dataset.manual].manual = isFinite(v) && v>0 ? v : null; save(); renderTotals(); }
+  if(m){ ST.cart[m.dataset.manual].manual = parseEur(m.value); save(); renderTotals(); }
 });
 $('buy-list').addEventListener('click', e=>{
-  const b = e.target.closest('[data-bought]');
-  if(b){ setOwned(b.dataset.bought, true); toast('¡Comprada! Pasa a tu colección'); }
+  const b = e.target.closest('[data-bought]'); if(!b) return;
+  const id = b.dataset.bought, it = ST.cart[id];
+  const lang = it && it.lang && it.lang!=='any' ? it.lang : S.defLang;
+  const o = ST.owned[id] || (ST.owned[id] = {t:Date.now(), langs:[]});
+  if(!o.langs.includes(lang)) o.langs.push(lang);
+  if(it && num(it.manual) != null){ o.vals = o.vals || {}; o.vals[lang] = it.manual; }
+  delete ST.cart[id]; save(); refreshAll();
+  toast(`¡Comprada! Añadida en ${LBY[lang].name.toLowerCase()}`);
 });
 $('buy-sort').addEventListener('change', renderBuy);
 $('buy-prices').addEventListener('click', ()=>{ toast('Actualizando precios…'); loadPrices(cartCards().map(c=>c.id), true, ()=>{ renderBuy(); toast('Precios actualizados'); }); });
 $('buy-all').addEventListener('click', ()=>{ const all=cartCards(); const allOn = all.every(c=>ST.cart[c.id].sel!==false); all.forEach(c=>ST.cart[c.id].sel = !allOn); save(); renderBuy(); });
 
-// ---------- Copia de seguridad ----------
-function exportText(){ return JSON.stringify({app:'pokedex-full-art', v:1, fecha:new Date().toISOString(), owned:ST.owned, cart:ST.cart}); }
+// =====================================================================
+// Ajustes
+// =====================================================================
+const SCHEMA = [
+  {sec:'Tema', items:[{k:'theme', type:'themes'}]},
+  {sec:'Color de acento', items:[{k:'accent', type:'accent'}]},
+  {sec:'Fondo', items:[
+    {k:'bgStyle', type:'seg', label:'Estilo', opts:[['liso','Liso'],['degradado','Degradado'],['acento','Halo de color'],['puntos','Puntos'],['cuadricula','Cuadrícula'],['pokeball','Poké Balls']]},
+    {k:'bgInt', type:'range', label:'Intensidad del fondo', min:0, max:100, step:5, unit:'%'},
+  ]},
+  {sec:'Transparencia y efectos', items:[
+    {k:'transp', type:'range', label:'Transparencia de fichas y barras', min:0, max:80, step:5, unit:'%'},
+    {k:'blur', type:'range', label:'Desenfoque tras lo transparente (cristal)', min:0, max:30, step:1, unit:' px'},
+    {k:'shadow', type:'seg', label:'Sombras', opts:[['none','Sin sombra'],['soft','Suaves'],['strong','Marcadas']]},
+    {k:'anim', type:'toggle', label:'Animaciones'},
+  ]},
+  {sec:'Letras', items:[
+    {k:'font', type:'fonts', label:'Tipografía'},
+    {k:'fs', type:'range', label:'Tamaño del texto', min:85, max:130, step:5, unit:'%'},
+    {k:'titleWeight', type:'seg', label:'Títulos', opts:[['800','Gruesos'],['600','Finos']]},
+    {k:'upper', type:'toggle', label:'Títulos en mayúsculas'},
+  ]},
+  {sec:'Formas', items:[
+    {k:'rad', type:'range', label:'Esquinas', min:0, max:28, step:1, unit:' px'},
+    {k:'btnShape', type:'seg', label:'Botones y etiquetas', opts:[['pill','Píldora'],['round','Redondeados'],['square','Rectos']]},
+    {k:'border', type:'range', label:'Grosor de los bordes', min:0, max:3, step:1, unit:' px'},
+    {k:'stripe', type:'toggle', label:'Franja de color de la rareza en cada carta'},
+  ]},
+  {sec:'Pokédex', items:[
+    {k:'tile', type:'seg', label:'Tamaño de las fichas', opts:[['s','Pequeño'],['m','Normal'],['l','Grande']]},
+    {k:'sprite', type:'seg', label:'Imagen del Pokémon', opts:[['pixel','Píxel'],['art','Arte oficial'],['home','3D (HOME)']]},
+    {k:'grey', type:'toggle', label:'Pokémon no conseguidos en gris'},
+    {k:'showNum', type:'toggle', label:'Número de Pokédex'},
+    {k:'showCount', type:'toggle', label:'Número de cartas'},
+    {k:'showBar', type:'toggle', label:'Barra de colores de rareza'},
+    {k:'groupGen', type:'toggle', label:'Separar por generaciones'},
+    {k:'defSort', type:'seg', label:'Orden al abrir la app', opts:[['dex','Nº Pokédex'],['cards','Más cartas'],['name','Nombre']]},
+  ]},
+  {sec:'Cartas e idiomas', items:[
+    {k:'langs', type:'multi', label:'Idiomas en los que coleccionas'},
+    {k:'defLang', type:'langsel', label:'Idioma al pulsar «Comprada» si no elegiste otro'},
+    {k:'showPrices', type:'toggle', label:'Mostrar precios de Cardmarket'},
+    {k:'rar', type:'rarity', label:'Colores de las rarezas'},
+  ]},
+  {sec:'Colección', items:[
+    {k:'colCols', type:'seg', label:'Columnas en el móvil', opts:[['2','2'],['3','3'],['4','4']]},
+    {k:'colInfo', type:'toggle', label:'Datos bajo cada carta'},
+  ]},
+  {sec:'Barra inferior', items:[
+    {k:'tabLabels', type:'toggle', label:'Nombres bajo los iconos'},
+  ]},
+];
+function pressed(v){ return v ? 'true' : 'false'; }
+function renderSettings(){
+  loadAllFonts();
+  const p = palette();
+  const rd = p.dark ? RAR_DEF.dark : RAR_DEF.light;
+  $('set-body').innerHTML = SCHEMA.map((sec,si)=>`<section class="set-sec glass"><h3>${sec.sec}</h3>${sec.items.map(it=>{
+    const v = S[it.k];
+    const lbl = it.label ? `<div class="lbl"><span>${it.label}</span>${it.type==='range'?`<output id="o-${it.k}">${v}${it.unit}</output>`:''}</div>` : '';
+    switch(it.type){
+      case 'themes': return `<div class="themes">${Object.entries(THEMES).map(([k,t])=>{
+          const tt = k==='auto' ? (mql.matches?THEMES.oscuro:THEMES.claro) : t;
+          const bg = k==='auto' ? `linear-gradient(135deg, ${THEMES.claro.bg} 50%, ${THEMES.oscuro.bg} 50%)` : tt.bg;
+          return `<button class="theme" type="button" data-set="theme" data-v="${k}" aria-pressed="${pressed(S.theme===k)}"><span class="pv" style="background:${bg}"><i style="background:${tt.surface}"></i><u style="background:${tt.ink}"></u><b style="background:${tt.accent}"></b></span>${t.name}</button>`;
+        }).join('')}</div>`;
+      case 'accent': return `<div class="swatches"><button class="chip" type="button" data-set="accent" data-v="" aria-pressed="${pressed(!S.accent)}">Del tema</button>${ACCENTS.map(c=>`<button class="sw" type="button" data-set="accent" data-v="${c}" style="background:${c}" aria-label="Acento ${c}" aria-pressed="${pressed(S.accent===c)}"></button>`).join('')}<label class="manual">Otro <input type="color" id="accent-pick" value="${S.accent || p.accent}" aria-label="Elegir color de acento"></label></div>`;
+      case 'seg': return `<div class="set-item">${lbl}<div class="seg">${it.opts.map(([ov,ol])=>`<button type="button" data-set="${it.k}" data-v="${ov}" aria-pressed="${pressed(String(v)===ov)}">${ol}</button>`).join('')}</div></div>`;
+      case 'range': return `<div class="set-item">${lbl}<input type="range" data-range="${it.k}" data-unit="${it.unit}" min="${it.min}" max="${it.max}" step="${it.step}" value="${v}" aria-label="${it.label}"></div>`;
+      case 'toggle': return `<label class="switch"><span>${it.label}</span><input type="checkbox" data-toggle="${it.k}" ${v?'checked':''}></label>`;
+      case 'fonts': return `<div class="set-item">${lbl}<div class="fonts">${Object.entries(FONTS).map(([k,f])=>`<button class="fontbtn" type="button" data-set="font" data-v="${k}" aria-pressed="${pressed(S.font===k)}"><span class="d" style="font-family:${f.display.replace(/"/g,"'")},system-ui;font-size:${f.scale<1?'.85rem':'1.25rem'}">Pikachu 025</span><span class="b" style="font-family:${f.body.replace(/"/g,"'")},system-ui">${f.name} · Illustration Rare</span></button>`).join('')}</div></div>`;
+      case 'multi': return `<div class="set-item">${lbl}<div class="seg">${LANGS.map(l=>`<button type="button" data-multi="langs" data-v="${l.k}" aria-pressed="${pressed(S.langs.includes(l.k))}">${l.label} · ${l.name}</button>`).join('')}</div><span class="small muted">Son los botones que aparecen en cada carta para marcar en qué idioma la tienes.</span></div>`;
+      case 'langsel': return `<div class="set-item">${lbl}<div class="seg">${LANGS.filter(l=>S.langs.includes(l.k)).map(l=>`<button type="button" data-set="defLang" data-v="${l.k}" aria-pressed="${pressed(S.defLang===l.k)}">${l.name}</button>`).join('')}</div></div>`;
+      case 'rarity': return `<div class="set-item">${lbl}<div class="rarity-colors">${GROUPS.map(g=>`<label><input type="color" data-rar="${g.k}" value="${(S.rar&&S.rar[g.k])||rd[g.k]}"> ${g.label}</label>`).join('')}<button class="btn sm" type="button" data-rar-reset style="justify-self:start">Colores originales</button></div></div>`;
+    }
+    return '';
+  }).join('')}</section>`).join('') + `<p class="small muted">Datos hasta ${esc(DATA.updated)} · ${DATA.cards.length} cartas · ${DATA.pokemon.length} Pokémon.</p>`;
+}
+function settingChanged(rerenderSettings){
+  save(); applySettings();
+  if(rerenderSettings) renderSettings();
+}
+$('set-body').addEventListener('click', e=>{
+  const b = e.target.closest('[data-set]');
+  if(b){
+    const k = b.dataset.set; let v = b.dataset.v;
+    if(k==='accent') v = v || null;
+    S[k] = v;
+    if(k==='defSort') state.sort = v, $('sort').value = v;
+    settingChanged(true); return;
+  }
+  const m = e.target.closest('[data-multi]');
+  if(m){
+    const v = m.dataset.v, arr = S.langs.slice(), i = arr.indexOf(v);
+    if(i>=0){ if(arr.length===1){ toast('Deja al menos un idioma'); return; } arr.splice(i,1); } else arr.push(v);
+    S.langs = LANGS.map(l=>l.k).filter(k=>arr.includes(k));
+    if(!S.langs.includes(S.defLang)) S.defLang = S.langs[0];
+    settingChanged(true); return;
+  }
+  if(e.target.closest('[data-rar-reset]')){ S.rar = {}; settingChanged(true); }
+});
+$('set-body').addEventListener('input', e=>{
+  const r = e.target.closest('[data-range]');
+  if(r){ S[r.dataset.range] = +r.value; $('o-'+r.dataset.range).textContent = r.value + r.dataset.unit; settingChanged(false); return; }
+  if(e.target.id==='accent-pick'){ S.accent = e.target.value; settingChanged(false); return; }
+  const rc = e.target.closest('[data-rar]');
+  if(rc){ S.rar = Object.assign({}, S.rar, {[rc.dataset.rar]: rc.value}); settingChanged(false); }
+});
+$('set-body').addEventListener('change', e=>{
+  const t = e.target.closest('[data-toggle]');
+  if(t){ S[t.dataset.toggle] = t.checked; settingChanged(false); return; }
+  if(e.target.id==='accent-pick' || e.target.closest('[data-rar]')) renderSettings();
+});
+$('set-reset').addEventListener('click', ()=>{
+  const keep = {langs:S.langs, defLang:S.defLang};
+  Object.keys(S).forEach(k=>delete S[k]); Object.assign(S, JSON.parse(JSON.stringify(DEFAULTS)), keep);
+  state.sort = S.defSort; $('sort').value = S.defSort;
+  settingChanged(true); toast('Apariencia restablecida');
+});
+
+// =====================================================================
+// Copia de seguridad
+// =====================================================================
+const exportText = () => JSON.stringify({app:'pokedex-full-art', v:2, fecha:new Date().toISOString(), owned:ST.owned, cart:ST.cart, settings:S});
 $('backup').addEventListener('toggle', ()=>{ if($('backup').open) $('bk-text').value = exportText(); });
 $('bk-copy').addEventListener('click', async ()=>{
   const t = exportText(); $('bk-text').value = t;
@@ -653,12 +1040,18 @@ $('bk-import').addEventListener('click', ()=>{
   try{
     const j = JSON.parse($('bk-text').value);
     if(!j || typeof j.owned!=='object') throw 0;
-    ST.owned = j.owned || {}; ST.cart = j.cart || {}; save(); refreshAll(); toast('Copia importada');
+    ST.owned = j.owned || {}; ST.cart = j.cart || {};
+    for(const id in ST.owned){ const o = ST.owned[id]; if(!Array.isArray(o.langs) || !o.langs.length) o.langs = [S.defLang || 'es']; }
+    if(j.settings){ Object.keys(S).forEach(k=>delete S[k]); Object.assign(S, DEFAULTS, j.settings); }
+    save(); applySettings(); renderSettings(); refreshAll(); toast('Copia importada');
   }catch(e){ toast('Ese texto no es una copia válida'); }
 });
 
-// ---------- Navegación ----------
+// =====================================================================
+// Navegación
+// =====================================================================
 let view = 'dex';
+const HASH = {dex:'', col:'coleccion', buy:'compra', set:'ajustes'};
 function show(v){
   view = v;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.v===v));
@@ -666,41 +1059,48 @@ function show(v){
   if(v==='col'){ renderCol(); loadPrices(ownedCards().map(c=>c.id), false, renderCol); }
   if(v==='buy'){ renderBuy(); loadPrices(cartCards().map(c=>c.id), false, renderBuy); }
   if(v==='dex') renderDex();
-  try{ history.replaceState(null,'', v==='dex' ? location.pathname : '#'+(v==='col'?'coleccion':'compra')); }catch(e){}
+  if(v==='set') renderSettings();
+  try{ history.replaceState(null,'', HASH[v] ? '#'+HASH[v] : location.pathname); }catch(e){}
   window.scrollTo(0,0);
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>show(t.dataset.v)));
 function refreshAll(){
-  $('n-col').textContent = Object.keys(ST.owned).filter(id=>CARDS[id]).length || '';
-  $('n-buy').textContent = Object.keys(ST.cart).filter(id=>CARDS[id]).length || '';
+  $('n-col').textContent = ownedCards().length || '';
+  $('n-buy').textContent = cartCards().length || '';
   if(view==='dex') renderDex();
   if(view==='col') renderCol();
   if(view==='buy') renderBuy();
-  if(sheetN!=null) { const y=$('s-body').scrollTop; renderSheetBody(); $('s-body').scrollTop=y; }
-  if(viewerId) syncButtons(viewerId);
+  if(sheetN!=null){ const y=$('s-body').scrollTop; renderSheetBody(); $('s-body').scrollTop=y; }
+  if(viewerId) renderViewer();
 }
 
-// ---------- Arranque ----------
+// =====================================================================
+// Arranque
+// =====================================================================
+applySettings();
 fetch('data.json').then(r=>r.json()).then(d=>{
   DATA = d;
   CARDS = Object.fromEntries(d.cards.map(c=>[c.id,c]));
   POKE = new Map(d.pokemon.map(p=>[p.dex,p]));
   $('updated').textContent = 'Datos hasta ' + d.updated;
+  $('sort').value = state.sort;
   mkChips($('status-chips'), [{v:'all',label:'Todos',on:true},{v:'got',label:'Conseguidos'},{v:'missing',label:'Me faltan'}], (it,b)=>{
     state.status = it.v; $('status-chips').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed', x===b)); renderDex();
   });
   mkChips($('gens'), GENS.map((g,i)=>({v:i+1,label:`${ROMAN[i]} · ${g[2]}`})), (it,b)=>{
     state.gens.has(it.v) ? state.gens.delete(it.v) : state.gens.add(it.v); b.setAttribute('aria-pressed', state.gens.has(it.v)); renderDex();
   });
-  mkChips($('groups'), GROUPS.map(g=>({v:g.k,label:g.label,c:g.c})), (it,b)=>{
+  mkChips($('groups'), GROUPS.map(g=>({v:g.k,label:g.label,c:gcol(g.k)})), (it,b)=>{
     state.groups.has(it.v) ? state.groups.delete(it.v) : state.groups.add(it.v); b.setAttribute('aria-pressed', state.groups.has(it.v)); renderDex();
   });
   $('q').addEventListener('input', e=>{ state.q = e.target.value; renderDex(); });
   $('sort').addEventListener('change', e=>{ state.sort = e.target.value; renderDex(); });
   $('showMissing').addEventListener('change', e=>{ state.missing = e.target.checked; renderDex(); });
-  const h = location.hash;
+  save();
+  const h = location.hash.slice(1);
   refreshAll();
-  if(h==='#coleccion') show('col'); else if(h==='#compra') show('buy');
+  const target = Object.keys(HASH).find(k=>HASH[k] && HASH[k]===h);
+  if(target) show(target);
 }).catch(()=>{ $('grid').innerHTML = '<p class="empty" style="grid-column:1/-1">No se han podido cargar los datos. Comprueba la conexión y recarga.</p>'; });
 
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
