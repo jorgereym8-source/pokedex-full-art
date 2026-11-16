@@ -96,6 +96,8 @@ input[type=search]{flex:1 1 220px;min-width:0}
 .dexno{font-family:var(--font-mono);font-size:.8rem;color:var(--muted)}
 .name{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
 .ncards{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tprice{font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+[data-prices="off"] .tprice{display:none}
 [data-shownum="off"] .tile .dexno,[data-showcount="off"] .tile .ncards,[data-showbar="off"] .tile .bar{display:none}
 .bar{display:flex;width:100%;height:5px;border-radius:3px;overflow:hidden;margin-top:6px;background:var(--line)}
 .bar i{display:block;height:100%}
@@ -234,6 +236,12 @@ footer p{margin:0}
           <option value="dex">Nº Pokédex</option>
           <option value="cards">Más cartas</option>
           <option value="name">Nombre A–Z</option>
+          <optgroup label="Precio (Cardmarket)">
+            <option value="minAsc">Carta más barata · de barato a caro</option>
+            <option value="minDesc">Carta más barata · de caro a barato</option>
+            <option value="maxAsc">Carta más cara · de barato a caro</option>
+            <option value="maxDesc">Carta más cara · de caro a barato</option>
+          </optgroup>
         </select>
       </div>
       <div class="chips" id="status-chips" aria-label="Estado"></div>
@@ -288,7 +296,7 @@ footer p{margin:0}
     <details class="backup glass" id="backup">
       <summary>Copia de seguridad</summary>
       <p class="small muted">Tu colección, tu lista y tus ajustes se guardan en este navegador. Copia este texto para pasarlos a otro dispositivo o guardarlos; pega uno y pulsa «Importar» para recuperarlos.</p>
-      <div class="row"><button class="btn sm" type="button" id="bk-copy">Copiar copia</button><button class="btn sm" type="button" id="bk-file">Descargar archivo</button><label class="btn sm" for="bk-upload">Abrir archivo</label><input type="file" id="bk-upload" accept="application/json,.json" hidden></div>
+      <div class="row"><button class="btn sm" type="button" id="bk-copy">Copiar copia</button><button class="btn sm" type="button" id="bk-file">Guardar archivo .json</button><label class="btn sm" for="bk-upload">Abrir archivo</label><input type="file" id="bk-upload" accept="application/json,.json" hidden></div>
       <textarea id="bk-text" aria-label="Texto de la copia de seguridad" spellcheck="false"></textarea>
       <div class="row"><button class="btn sm primary" type="button" id="bk-import">Importar</button><span class="small muted">Importar sustituye lo guardado ahora.</span></div>
     </details>
@@ -526,7 +534,7 @@ async function fetchPrice(card){
 const inflight = new Map();
 let queue = [], active = 0;
 function pump(){
-  while(active < 4 && queue.length){
+  while(active < 6 && queue.length){
     const {card, resolve} = queue.shift(); active++;
     fetchPrice(card).then(p=>{ ST.prices[card.id] = p; save(); resolve(p); }).finally(()=>{ active--; pump(); });
   }
@@ -674,6 +682,17 @@ function barHTML(ids){
   const cnt={}; ids.forEach(id=>{const g=CARDS[id].g; cnt[g]=(cnt[g]||0)+1;});
   return '<div class="bar" aria-hidden="true">'+GROUPS.filter(g=>cnt[g.k]).map(g=>`<i style="flex:${cnt[g.k]};background:${gcol(g.k)}"></i>`).join('')+'</div>';
 }
+const PRICE_SORTS = {minAsc:{use:'min',dir:1}, minDesc:{use:'min',dir:-1}, maxAsc:{use:'max',dir:1}, maxDesc:{use:'max',dir:-1}};
+let allPricesLoading = false, allPricesDone = 0, dexRenderT = null;
+function dexRenderSoon(){ if(dexRenderT) return; dexRenderT = setTimeout(()=>{ dexRenderT = null; if(view==='dex') renderDex(); }, 700); }
+function ensureAllPrices(){
+  if(allPricesLoading) return;
+  const fresh = c => { const p = ST.prices[c.id]; return p && Date.now() - p.t < (p.none ? DAY/4 : DAY); };
+  const todo = DATA.cards.filter(c=>!fresh(c));
+  if(!todo.length) return;
+  allPricesLoading = true; allPricesDone = DATA.cards.length - todo.length;
+  Promise.all(todo.map(c=>getPrice(c).then(()=>{ allPricesDone++; dexRenderSoon(); }))).finally(()=>{ allPricesLoading = false; dexRenderSoon(); toast('Precios de todas las cartas cargados'); });
+}
 function renderDex(){
   renderDexStats();
   const list = [];
@@ -695,10 +714,16 @@ function renderDex(){
     }
     if(state.missing && state.status==='all') list.push({n, gen, es:names[0], ids:[], has:false});
   }
+  const priceSort = PRICE_SORTS[state.sort];
   if(state.sort==='cards') list.sort((a,b)=>b.ids.length-a.ids.length||a.n-b.n);
   else if(state.sort==='name') list.sort((a,b)=>a.es.localeCompare(b.es,'es'));
+  else if(priceSort){
+    list.forEach(x=>{ const ps = x.ids.map(refPrice).filter(v=>v!=null); x.price = ps.length ? (priceSort.use==='min' ? Math.min(...ps) : Math.max(...ps)) : null; });
+    list.sort((a,b)=> (a.price==null) - (b.price==null) || (priceSort.dir*((a.price??0)-(b.price??0))) || a.n-b.n);
+    ensureAllPrices();
+  }
   const withC = list.filter(x=>x.has);
-  $('count').textContent = `${withC.length} Pokémon · ${new Set(withC.flatMap(x=>x.ids)).size} cartas`;
+  $('count').textContent = `${withC.length} Pokémon · ${new Set(withC.flatMap(x=>x.ids)).size} cartas` + (priceSort && allPricesLoading ? ` · cargando precios ${allPricesDone}/${DATA.cards.length}…` : '');
   const grid = $('grid');
   if(!list.length){ grid.innerHTML = '<p class="empty" style="grid-column:1/-1">Ningún Pokémon coincide con estos filtros.</p>'; return; }
   let h='', last=0;
@@ -713,7 +738,7 @@ function renderDex(){
       h += `<button class="tile glass${x.own?' got':''}" type="button" data-n="${x.n}" aria-label="${esc(x.es)}: ${x.ids.length} cartas, ${x.own} en tu colección">
         ${x.own?`<span class="badge">${x.own}/${x.ids.length}</span>`:''}${x.cart?`<span class="badge cartb">${x.cart} en lista</span>`:''}
         ${spriteImg(x.n)}<span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span>
-        <span class="ncards">${x.ids.length} ${x.ids.length===1?'carta':'cartas'}</span>${barHTML(x.ids)}</button>`;
+        <span class="ncards">${x.ids.length} ${x.ids.length===1?'carta':'cartas'}</span>${priceSort?`<span class="tprice">${x.price!=null?(priceSort.use==='min'?'desde ':'hasta ')+eur(x.price):'sin precio'}</span>`:''}${barHTML(x.ids)}</button>`;
     } else {
       h += `<div class="tile none"><div class="ph">–</div><span class="dexno">${pad(x.n)}</span><span class="name">${esc(x.es)}</span><span class="ncards">sin carta</span></div>`;
     }
@@ -936,7 +961,7 @@ const SCHEMA = [
     {k:'showCount', type:'toggle', label:'Número de cartas'},
     {k:'showBar', type:'toggle', label:'Barra de colores de rareza'},
     {k:'groupGen', type:'toggle', label:'Separar por generaciones'},
-    {k:'defSort', type:'seg', label:'Orden al abrir la app', opts:[['dex','Nº Pokédex'],['cards','Más cartas'],['name','Nombre']]},
+    {k:'defSort', type:'seg', label:'Orden al abrir la app', opts:[['dex','Nº Pokédex'],['cards','Más cartas'],['name','Nombre'],['minAsc','Más barata primero'],['maxDesc','Más cara primero']]},
   ]},
   {sec:'Cartas e idiomas', items:[
     {k:'langs', type:'multi', label:'Idiomas en los que coleccionas'},
@@ -1029,11 +1054,22 @@ $('bk-copy').addEventListener('click', async ()=>{
   const t = exportText(); $('bk-text').value = t;
   try{ await navigator.clipboard.writeText(t); toast('Copia copiada'); }catch(e){ $('bk-text').select(); toast('Selecciona el texto y cópialo'); }
 });
-$('bk-file').addEventListener('click', ()=>{
+$('bk-file').addEventListener('click', async ()=>{
+  const name = 'pokedex-full-art-' + new Date().toISOString().slice(0,10) + '.json';
+  const blob = new Blob([exportText()],{type:'application/json'});
+  // En iPhone/iPad, el menú Compartir permite guardarlo en Archivos, AirDrop, correo…
+  try{
+    const file = new File([blob], name, {type:'application/json'});
+    if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'Copia de Pokédex Full Art'});
+      return;
+    }
+  }catch(e){ if(e && e.name==='AbortError') return; }
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([exportText()],{type:'application/json'}));
-  a.download = 'pokedex-full-art-' + new Date().toISOString().slice(0,10) + '.json';
+  a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('Copia descargada');
 });
 $('bk-upload').addEventListener('change', async e=>{ const f=e.target.files[0]; if(f){ $('bk-text').value = await f.text(); toast('Archivo cargado: pulsa Importar'); } });
 $('bk-import').addEventListener('click', ()=>{
